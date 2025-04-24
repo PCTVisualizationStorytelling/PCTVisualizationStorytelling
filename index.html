@@ -326,6 +326,46 @@
         margin-bottom: 5px;
         margin-top: 0px;
       }
+      .chevron::before {
+        border-style: solid;
+        border-width: 0.25em 0.25em 0 0;
+        content: "";
+        display: inline-block;
+        height: 0.45em;
+        left: 0.15em;
+        position: relative;
+        top: 0.15em;
+        transform: rotate(-45deg);
+        vertical-align: top;
+        width: 0.45em;
+      }
+
+      .chevron.right:before {
+        left: 0;
+        transform: rotate(45deg);
+      }
+
+      .chevron.bottom:before {
+        top: 0;
+        transform: rotate(135deg);
+      }
+
+      .chevron.left:before {
+        left: 0.25em;
+        transform: rotate(-135deg);
+      }
+
+      .chevronbutton {
+        background-color: transparent;
+        border: none;
+        font-size: x-large;
+        color: #aeaeae;
+      }
+
+      .chevronbutton:hover {
+        cursor: pointer;
+        color: black;
+      }
     </style>
   </head>
   <body>
@@ -415,11 +455,11 @@
     </div>
 
     <!-- Scrollytelling (righthandside on the screen)-->
-    <div id="scrollytelling-container">
+    <div id="scrollytelling-container" style="position: relative">
       <!-- Landing page 1-->
       <div id="intro-step" class="step active">
         <div id="welcome-section">
-          <h3>Welcome to the Pacific Crest Trail Planner</h3>
+          <h2>Welcome to the Pacific Crest Trail Planner</h2>
           <div class="chart-container" style="height: 180px">
             <canvas id="fullTrailElevationChart"></canvas>
           </div>
@@ -638,20 +678,34 @@
       </div>
 
       <div id="segments-container" style="display: none"></div>
-      <div
-        id="segment-navigation"
-        style="display: flex; justify-content: space-between; padding: 0px"
+
+      <button
+        class="chevronbutton"
+        id="prevSegment"
+        style="
+          padding: 0px 5px;
+          display: none;
+          position: absolute;
+          left: 10px;
+          bottom: 10px;
+        "
       >
-        <button id="prevSegment" style="padding: 0px 5px; display: none">
-          Previous
-        </button>
-        <button
-          id="nextSegment"
-          style="padding: 0px 5px; margin-left: auto; display: none"
-        >
-          Next
-        </button>
-      </div>
+        <span class="chevron left"></span>
+      </button>
+      <button
+        id="nextSegment"
+        class="chevronbutton"
+        style="
+          padding: 0px 5px;
+          margin-left: auto;
+          display: none;
+          position: absolute;
+          right: 10px;
+          bottom: 10px;
+        "
+      >
+        <span class="chevron right"></span>
+      </button>
     </div>
 
     <!-- Image Modal -->
@@ -670,6 +724,8 @@
   </body>
 
   <script>
+    var currentSegment;
+
     // The map
     mapboxgl.accessToken =
       "pk.eyJ1IjoianVyb3MyMDIzIiwiYSI6ImNtNzF2ZXhyYjAzdDQyanIwZXEwY2kwM24ifQ.wswKD_UbiEQm8oTsQkyoKA";
@@ -866,20 +922,31 @@
         .map((row) => {
           if (row.length < 13 || !row[0]) return null;
 
+          let obj = Object.fromEntries(
+            row.map((e, i) => {
+              return [headers[i].trim(), e];
+            })
+          );
+
+          console.log(obj);
+
           return {
-            segmentNumber: parseInt(row[0].trim()),
-            startLongitude: row[1] ? parseFloat(row[1].trim()) : null,
-            startLatitude: row[2] ? parseFloat(row[2].trim()) : null,
-            endLongitude: row[3] ? parseFloat(row[3].trim()) : null,
-            endLatitude: row[4] ? parseFloat(row[4].trim()) : null,
-            location: row[5] ? row[5].trim() : "",
-            landmarks: row[6] ? row[6].trim() : "",
-            landmarkLong: row[7] ? parseFloat(row[7].trim()) : null,
-            landmarkLat: row[8] ? parseFloat(row[8].trim()) : null,
-            description: row[9] ? row[9].trim() : "No description",
-            distanceKm: row[10] ? parseFloat(row[10].trim()) : 0,
-            part: row[11] ? row[11].trim() : "",
-            imagePath: row[12] ? row[12].trim() : "",
+            segmentNumber: parseInt(obj["Segment Number"].trim()),
+            startLongitude: parseFloat(obj["Start Longitude"].trim()),
+            startLatitude: parseFloat(obj["Start Latitude"].trim()),
+            endLongitude: parseFloat(obj["End Longitude"].trim()),
+            endLatitude: parseFloat(obj["End Latitude"].trim()),
+            location: obj["Location"].trim(),
+            landmarks: obj["Landmarks"].trim(),
+            landmarkLong: parseFloat(obj["Landmark long"].trim()),
+            landmarkLat: parseFloat(obj["Landmark lat"].trim()),
+            description:
+              obj["Description_new"] != null
+                ? obj["Description_new"].trim()
+                : obj["Description"].trim(),
+            distanceKm: parseFloat(obj["Distance (km)"].trim()),
+            part: obj["Part"].trim(),
+            imagePath: obj["imagesPath"].trim(),
           };
         })
         .filter((row) => row !== null);
@@ -1222,6 +1289,8 @@
       if (!routeData) return;
 
       const segmentData = await loadCSVData();
+      console.log("segmentData", segmentData);
+
       const numSegments = window.selectedSegments || 30;
       let lineCoordinates = [...routeData.features[0].geometry.coordinates];
       let originalProperties = [
@@ -1249,12 +1318,7 @@
         let segmentInfo = segmentData.find(
           (s) => s.segmentNumber === segmentIndex
         );
-        console.log(
-          "Image path for segment",
-          segmentIndex,
-          ":",
-          segmentInfo.imagePath
-        );
+        console.log("Image path for segment", segmentIndex, ":", segmentInfo);
 
         segmentFeatures.push({
           type: "Feature",
@@ -1502,7 +1566,7 @@
       document.getElementById("segments-container").innerHTML =
         scrollytellingContent;
       segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
-      let currentSegment =
+      currentSegment =
         window.routeDirection === -1 ? window.selectedSegments : 1;
       const totalSegments = window.selectedSegments;
 
@@ -2159,9 +2223,15 @@
               );
 
               if (segmentIndex !== lastSegmentIndex) {
+                currentSegment = segmentIndex;
                 highlightSegment(segmentIndex);
                 focusOnSegment(segmentIndex);
                 lastSegmentIndex = segmentIndex;
+
+                document.getElementById("prevSegment").style.display =
+                  currentSegment <= 1 ? "none" : "inline-block";
+                document.getElementById("nextSegment").style.display =
+                  currentSegment >= totalSegments ? "none" : "inline-block";
               }
             }
           });
@@ -2361,7 +2431,7 @@
     function scrollToSegment(index) {
       const segment = document.querySelector(`.step[data-segment='${index}']`);
       if (segment) {
-        segment.scrollIntoView({ behavior: "smooth" });
+        segment.scrollIntoView();
 
         document.getElementById("prevSegment").style.display =
           index <= 1 ? "none" : "inline-block";
