@@ -1,2 +1,2 @@
-# PCTVisualizationStorytelling
-Pcific Crest Trail Visualization Storytelling
+# Pacific Crest Trail Visualization Storytelling
+
