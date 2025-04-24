@@ -1,852 +1,1361 @@
 <!DOCTYPE html>
 <html lang="da">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pacific Crest Trail</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.0/mapbox-gl.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.0/mapbox-gl.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.14.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
     <style>
-        body { margin: 0; padding: 0; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; display: flex; }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        display: flex;
+      }
 
-        #map-container { width: 50vw; height: 100vh; position: relative; }
-        #map { width: 100%; height: 100%; }
-        #map-controls { position: absolute; top: 10px;  left: 10px; background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 5px; box-shadow: 5px; font-size: 14px; z-index: 1000;}
-        
-        #scrollytelling-container { width: 50vw; height: 100vh; overflow-y: auto; padding: 0; display: flex; flex-direction: column; text-align: left; border-radius: 0px; margin: 0; box-sizing: border-box;}
-        #segments-container {flex: 1; width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box;}
-        #segments-container .step {min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 20px;}
+      #map-container {
+        width: 50vw;
+        height: 100vh;
+        position: relative;
+      }
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+      #map-controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 5px;
+        font-size: 14px;
+        z-index: 1000;
+      }
 
-        #buttons {padding: 7px 12px; border: 1; border-radius: 5px; cursor: pointer; font-size: 15px;}
-        #buttons:hover {background: #f0f0f0; border-color: #3b1111; box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2); transform: scale(1.05);}
+      #scrollytelling-container {
+        width: 50vw;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        border-radius: 0px;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      #segments-container {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+      #segments-container .step {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 20px;
+      }
 
-        input[type="text"] {width: 200px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; transition: border 0.7s ease;}
-        input[type="text"]:focus {border-color: #3b1111; outline: none;}
-        input[type="number"] {width: 80px; padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; transition: border 0.7s ease;}
-        input[type="number"]:focus {border-color: #3b1111; outline: none;}
+      #buttons {
+        padding: 7px 12px;
+        border: 1;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+      #buttons:hover {
+        background: #f0f0f0;
+        border-color: #3b1111;
+        box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+        transform: scale(1.05);
+      }
 
-        #calculate-section {width: 50vw; height: 100vh; padding: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: flex-start; margin: 0; box-sizing: border-box;}
-        .calc-step {opacity: 0;transform: translateY(20px);transition: opacity 0.7s ease, transform 0.7s ease;display: none;}
-        .calc-step.active {display: block;opacity: 1;transform: translateY(0);}
-        #categoryResult {opacity: 0;transform: translateY(20px);transition: opacity 0.7s ease, transform 0.7s ease;}
-        #categoryResult.visible {opacity: 1;transform: translateY(0);}
-        
-        
-        .step {height: 10; min-width: 93vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; border-radius: 0px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); padding: 10px; text-align: center; font-size: 18px; min-height: 100vh; opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
-        .step.active { background: #fafafa; color: rgb(56, 10, 10); opacity: 1; transform: translateY(0); }
-        
-        
-        .slider-container {width: 100%; max-width: 400px; margin: 5px auto; display: flex; align-items: center; flex-direction: column; position: relative; }
-        .slider-labels {width: 100%; display: flex; justify-content: space-between; font-size: 12px; margin-top: 5px; }
-        .slider-labels span {text-align: center; flex: 1; }
-        .styled-slider {width: 100%; -webkit-appearance: none; background: linear-gradient(to right, #3b1111, #8b3f35, #854b1548); height: 8px; border-radius: 4px; outline: none; margin-top: 20px; cursor: pointer;}
-        .styled-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: black; border-radius: 50%; cursor: pointer; margin-top: -4px; box-shadow: 0 0 3px rgba(0, 0, 0, 0.3); }
+      input[type="text"] {
+        width: 200px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        transition: border 0.7s ease;
+      }
+      input[type="text"]:focus {
+        border-color: #3b1111;
+        outline: none;
+      }
+      input[type="number"] {
+        width: 80px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        transition: border 0.7s ease;
+      }
+      input[type="number"]:focus {
+        border-color: #3b1111;
+        outline: none;
+      }
 
+      #calculate-section {
+        width: 50vw;
+        height: 100vh;
+        padding: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      .calc-step {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+        display: none;
+      }
+      .calc-step.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #categoryResult {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+      }
+      #categoryResult.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-        
-        .chart-container {width: 90%; max-width: 800px; height: 180px; margin-top: 0px; margin-bottom: 5px; display: flex; justify-content: center; }
-        p.chart-info-line {margin-top: 0px; margin-bottom: 5px; font-size: 12px; }
-        #welcome-section h3 {margin-top: 0; }
-          
-        
-        .options-container {display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;}
-        .option-box {width: 250px; padding: 15px; background: #fdfdfd; border: 2px solid #ddd; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.3s ease-in-out; display: flex; flex-direction: column; align-items: center; justify-content: center;}
-        .option-box:hover {background: #f0f0f0; border-color: #3b1111; box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);}
-        .option-box input[type="radio"]{margin-bottom: 10px; transform:scale(1.3); cursor: pointer;}
+      .step {
+        height: 10;
+        min-width: 93vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: white;
+        border-radius: 0px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        text-align: center;
+        font-size: 18px;
+        min-height: 100vh;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+      }
+      .step.active {
+        background: #fafafa;
+        color: rgb(56, 10, 10);
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-        .description-image-wrapper {display: flex;gap: 20px;align-items: flex-start;justify-content: space-between;margin-bottom: 10px;}
-        .description-text {flex: 1;font-size: 14px;line-height: 1.5;}
-        .thumbnail-wrapper {flex-shrink: 0;}
-        .thumbnail {width: 120px;height: auto;cursor: pointer;border: 1px solid #ccc;border-radius: 5px;transition: transform 0.2s ease;}
-        .thumbnail:hover {transform: scale(1.05);}
-        #imageModal {position: fixed;z-index: 9999;top: 0;left: 0;width: 100vw;height: 100vh;background: rgba(0,0,0,0.85);display: flex;justify-content: center;align-items: center;cursor: zoom-out;}
-        .box {background-color: #f9f7f6;border-radius: 12px;padding: 5px 5px;width: 130px; height: 120px; text-align: center;box-shadow: 0 0 2px rgba(0,0,0,0.1);font-size: 12px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;}
-        .box h4 {margin-bottom: 2px;color: #4b2e2e;}
-        .box p {margin-top: 2px;}
-        canvas { max-width: 100%; }
-        h3 {margin-bottom: 5px; margin-top: 0px }
-          
+      .slider-container {
+        width: 100%;
+        max-width: 400px;
+        margin: 5px auto;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        position: relative;
+      }
+      .slider-labels {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+      .slider-labels span {
+        text-align: center;
+        flex: 1;
+      }
+      .styled-slider {
+        width: 100%;
+        -webkit-appearance: none;
+        background: linear-gradient(to right, #3b1111, #8b3f35, #854b1548);
+        height: 8px;
+        border-radius: 4px;
+        outline: none;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+      .styled-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: black;
+        border-radius: 50%;
+        cursor: pointer;
+        margin-top: -4px;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+      }
+
+      .chart-container {
+        width: 90%;
+        max-width: 800px;
+        height: 180px;
+        margin-top: 0px;
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: center;
+      }
+      p.chart-info-line {
+        margin-top: 0px;
+        margin-bottom: 5px;
+        font-size: 12px;
+      }
+      #welcome-section h3 {
+        margin-top: 0;
+      }
+
+      .options-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .option-box {
+        width: 250px;
+        padding: 15px;
+        background: #fdfdfd;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .option-box:hover {
+        background: #f0f0f0;
+        border-color: #3b1111;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+      }
+      .option-box input[type="radio"] {
+        margin-bottom: 10px;
+        transform: scale(1.3);
+        cursor: pointer;
+      }
+
+      .description-image-wrapper {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .description-text {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .thumbnail-wrapper {
+        flex-shrink: 0;
+      }
+      .thumbnail {
+        width: 120px;
+        height: auto;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        transition: transform 0.2s ease;
+      }
+      .thumbnail:hover {
+        transform: scale(1.05);
+      }
+      #imageModal {
+        position: fixed;
+        z-index: 9999;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: zoom-out;
+      }
+      .box {
+        background-color: #f9f7f6;
+        border-radius: 12px;
+        padding: 5px 5px;
+        width: 130px;
+        height: 120px;
+        text-align: center;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      .box h4 {
+        margin-bottom: 2px;
+        color: #4b2e2e;
+      }
+      .box p {
+        margin-top: 2px;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      h3 {
+        margin-bottom: 5px;
+        margin-top: 0px;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <!-- Map layout (lefthandside on the screen)-->
     <div id="map-container">
-        <div id="map"></div>
-        <div id="map-controls">
-            <label for="mapStyle">Choose map style:</label>
-            <select id="mapStyle" onchange="changeMapStyle()">
-                <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
-                <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite</option>
-                <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
-                <option value="mapbox://styles/mapbox/light-v11">Light</option>
-                <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
-                <option value="mapbox://styles/mapbox/satellite-v9">Pure Satellite</option>
-            </select> 
-            <br>
-            <label>
-                <input type="checkbox" id="toggleWater" onchange="toggleWaterPoints()"> Water
-            </label>
-            <br>
-            <label>
-                <input type="checkbox" id="toggleShops" onchange="toggleShopPoints()"> Shops and campsites
-            </label>
-            <br>
-            <label>
-                <input type="checkbox" id="toggleAnimals" onchange="toggleAnimalPoints()"> Dangerous animals
-            </label>
-            <div style="margin-top: 10px;">
-                <label for="pitchRange">Pitch: <span id="pitchValue">60°</span></label><br>
-                <input type="range" id="pitchRange" min="0" max="85" value="60" oninput="updatePitchBearing()">
-                <br>
-                <label for="rotationRange">Rotation: <span id="rotationValue">0°</span></label><br>
-                <input type="range" id="rotationRange" min="0" max="360" value="0" oninput="updatePitchBearing()">
-                <br>
-                <label for="exaggerationRange">Terrain Exaggeration: <span id="exaggerationValue">5.0</span>x</label><br>
-                <input type="range" id="exaggerationRange" min="0" max="10" step="0.1" value="5" oninput="updateExaggeration()">
-
-            </div>
-            
-        </div> 
+      <div id="map"></div>
+      <div id="map-controls">
+        <label for="mapStyle">Choose map style:</label>
+        <select id="mapStyle" onchange="changeMapStyle()">
+          <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
+          <option value="mapbox://styles/mapbox/satellite-streets-v12">
+            Satellite
+          </option>
+          <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+          <option value="mapbox://styles/mapbox/light-v11">Light</option>
+          <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
+          <option value="mapbox://styles/mapbox/satellite-v9">
+            Pure Satellite
+          </option>
+        </select>
+        <br />
+        <label>
+          <input
+            type="checkbox"
+            id="toggleWater"
+            onchange="toggleWaterPoints()"
+          />
+          Water
+        </label>
+        <br />
+        <label>
+          <input
+            type="checkbox"
+            id="toggleShops"
+            onchange="toggleShopPoints()"
+          />
+          Shops and campsites
+        </label>
+        <br />
+        <label>
+          <input
+            type="checkbox"
+            id="toggleAnimals"
+            onchange="toggleAnimalPoints()"
+          />
+          Dangerous animals
+        </label>
+        <div style="margin-top: 10px">
+          <label for="pitchRange">Pitch: <span id="pitchValue">60°</span></label
+          ><br />
+          <input
+            type="range"
+            id="pitchRange"
+            min="0"
+            max="85"
+            value="60"
+            oninput="updatePitchBearing()"
+          />
+          <br />
+          <label for="rotationRange"
+            >Rotation: <span id="rotationValue">0°</span></label
+          ><br />
+          <input
+            type="range"
+            id="rotationRange"
+            min="0"
+            max="360"
+            value="0"
+            oninput="updatePitchBearing()"
+          />
+          <br />
+          <label for="exaggerationRange"
+            >Terrain Exaggeration:
+            <span id="exaggerationValue">5.0</span>x</label
+          ><br />
+          <input
+            type="range"
+            id="exaggerationRange"
+            min="0"
+            max="10"
+            step="0.1"
+            value="5"
+            oninput="updateExaggeration()"
+          />
+        </div>
+      </div>
     </div>
-    
+
     <!-- Scrollytelling (righthandside on the screen)-->
     <div id="scrollytelling-container">
+      <!-- Landing page 1-->
+      <div id="intro-step" class="step active">
+        <div id="welcome-section">
+          <h3>Welcome to the Pacific Crest Trail Planner</h3>
+          <div class="chart-container" style="height: 180px">
+            <canvas id="fullTrailElevationChart"></canvas>
+          </div>
 
-        <!-- Landing page 1-->
-        <div id="intro-step" class="step active">
-            <div id="welcome-section">
-                <h3>Welcome to the Pacific Crest Trail Planner</h3>
-                <div class="chart-container" style="height: 180px;">
-                    <canvas id="fullTrailElevationChart"></canvas>
-                  </div>
-
-                  <p style="font-size: 12px;" class="chart-info-line">
-                    📏<strong>Distance</strong> of each segment| 
-                    📈<strong>Elevation gain</strong> |
-                    📉<strong>Elevation loss</strong> |
-                    <strong>Short decription</strong> of each segment
-                </p>
-                <p style="max-width: 900px; margin: 0 auto; text-align: center; margin-top: 5px; font-size: 15px">
-                    The trail will be shown in segments, similar to this page. Here you will get information about the area
-                    you will be hiking in. At the right handside a photo of an attraction or 
-                    pointed area will be shown - it's clickable. The map on the lefthand-side on the screen is 
-                    adjustable, so you can make serval filtrations if you preffer. The elevation chart is interactive with the map - try it out! 
-                    
-                </p>
-                <div class="segment-details-container" style="display: flex; justify-content: space-around; margin-top: 5px; flex-wrap: wrap; gap: 5px;">
-            
-                    <!-- Weather Box -->
-                    <div class="box">
-                        <h4>Temperature</h4>
-                        <p>Here you will get information about the weather in both day and night time. You can select between all 12 months</p>
-                        <p><i class="fa-solid fa-person-hiking" style="color:#444; font-size: 20px;"></i>  <img src="Images/tent.png" alt="Tent icon" style="width: 40px; vertical-align: middle;"></p>
-                    </div>
-            
-                    <!-- Animals Box -->
-                    <div class="box">
-                        <h4>Animals</h4>
-                        <p>Along the trail, you might spot following animals: <br> <br>
-                            🐻 Bears <br> 
-                            🐺 Wolfs <br> 
-                            🐍 Rattlesnakes <br>
-                            🦂 Scorpions and <br>
-                            🐆 Pumas <br> 
-                    </div>
-            
-                    <!-- Water Box -->
-                    <div class="box">
-                        <h4>Water</h4>
-                        <p>Each section will inform you whether there are a lot of water points, or if you may remeber to fill up your bottle at every water point</p>
-                        <p>💧 💧 💧 💧</p>
-                    </div>
-            
-                    <!-- Shops & Campsites -->
-                    <div class="box">
-                        <h4>Shops & Camps</h4>
-                        <p>Here you will get information about the amount of shops and certified campsites to stay at night during the trail</p>
-                        <p>🏕️ 🏕️ 🏕️ 🏕️</p>
-                    </div>
-                </div>
-            
-                <p style="max-width: 700px; margin: 40px auto 20px auto; text-align: center;">
-                    On the next page we’ll ask about your running and hiking pace. Use the slider to find our pace or enter it manually. 
-                    It will then give you an estimated time to complete the trail
-                </p>
-            
-                <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="showCalculation()" id="buttons">Next</button>
-                </div>
+          <p style="font-size: 12px" class="chart-info-line">
+            📏<strong>Distance</strong> of each segment| 📈<strong
+              >Elevation gain</strong
+            >
+            | 📉<strong>Elevation loss</strong> |
+            <strong>Short decription</strong> of each segment
+          </p>
+          <p
+            style="
+              max-width: 900px;
+              margin: 0 auto;
+              text-align: center;
+              margin-top: 5px;
+              font-size: 15px;
+            "
+          >
+            The trail will be shown in segments, similar to this page. Here you
+            will get information about the area you will be hiking in. At the
+            right handside a photo of an attraction or pointed area will be
+            shown - it's clickable. The map on the lefthand-side on the screen
+            is adjustable, so you can make serval filtrations if you preffer.
+            The elevation chart is interactive with the map - try it out!
+          </p>
+          <div
+            class="segment-details-container"
+            style="
+              display: flex;
+              justify-content: space-around;
+              margin-top: 5px;
+              flex-wrap: wrap;
+              gap: 5px;
+            "
+          >
+            <!-- Weather Box -->
+            <div class="box">
+              <h4>Temperature</h4>
+              <p>
+                Here you will get information about the weather in both day and
+                night time. You can select between all 12 months
+              </p>
+              <p>
+                <i
+                  class="fa-solid fa-person-hiking"
+                  style="color: #444; font-size: 20px"
+                ></i>
+                <img
+                  src="Images/tent.png"
+                  alt="Tent icon"
+                  style="width: 40px; vertical-align: middle"
+                />
+              </p>
             </div>
 
-            <!-- Landing page 2 -->
-            <div id="calculation-section" style="display: none;">
-                <div id="step-1" class="calc-step active">
-
-                    <p style="margin-bottom: 5px">Please choose your preferred category or manually enter your paces below <br>
-                        to estimate the time to complete the Pacific Crest Trail</p>
-
-                    <br>
-
-                    <!-- Clickable Slider -->
-                    <div class="slider-container">
-                        <input type="range" id="realSlider" min="1" max="7" step="1" value="4" class="styled-slider" oninput="handleSliderChange(this.value)">
-                        <div class="slider-labels">
-                          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
-                        </div>
-                    
-                    </div>
-
-                    <!-- Category Description -->
-                    <p id="category-description" style="margin-top: 15px; font-size: 14px; color: #444;"></p>
-
-                    <br>
-
-                    <!-- Manual Paces -->
-                    <label for="runPace">Running pace (min/km):</label>
-                    <input type="text" id="runPace" placeholder="e.g. 14:00">
-
-                    <br><br>
-
-                    <label for="hikePace">Hiking pace (min/km):</label>
-                    <input type="text" id="hikePace" placeholder="e.g. 40:00">
-
-                    <br><br>
-
-                    <!-- Rest Days -->
-                    <label for="restDaysMonth">Rest days per month:</label>
-                    <input type="number" id="restDaysMonth" min="0" max="31" value="2">
-
-                    <br><br>
-
-                    <!-- Direction Selection -->
-                    <p>Which direction do you plan to hike?</p>
-                    <label><input type="radio" name="routeDirection" value="1" checked> South to North</label><br>
-                    <label><input type="radio" name="routeDirection" value="-1"> North to South</label>
-
-                    <br><br>
-
-                    <!-- Calculate button-->
-                    <button onclick="calculateCategory()" id="buttons">Calculate time</button>
-
-                    <br>
-
-                    <!-- Estimated time result -->
-                    <p id="estimatedTimeDisplay" style="margin-top: 15px; font-weight: bold; color: #444;"></p>
-
-                    <button onclick="goBack()" id="buttons">Return</button>
-                    <button onclick="calculateAndStartTrail()" id="buttons">Begin the trail!</button>
-                </div>
+            <!-- Animals Box -->
+            <div class="box">
+              <h4>Animals</h4>
+              <p>
+                Along the trail, you might spot following animals: <br />
+                <br />
+                🐻 Bears <br />
+                🐺 Wolfs <br />
+                🐍 Rattlesnakes <br />
+                🦂 Scorpions and <br />
+                🐆 Pumas <br />
+              </p>
             </div>
-        </div>
-            
-        <div id="segments-container" style="display: none;"> </div>
-        <div id="segment-navigation" style="display: flex; justify-content: space-between; padding: 0px;">
-            <button id="prevSegment" style="padding: 0px 5px; display: none;">Previous</button>
-            <button id="nextSegment" style="padding: 0px 5px; margin-left: auto; display: none">Next</button>
-        </div>
-        
-        
 
+            <!-- Water Box -->
+            <div class="box">
+              <h4>Water</h4>
+              <p>
+                Each section will inform you whether there are a lot of water
+                points, or if you may remeber to fill up your bottle at every
+                water point
+              </p>
+              <p>💧 💧 💧 💧</p>
+            </div>
 
+            <!-- Shops & Campsites -->
+            <div class="box">
+              <h4>Shops & Camps</h4>
+              <p>
+                Here you will get information about the amount of shops and
+                certified campsites to stay at night during the trail
+              </p>
+              <p>🏕️ 🏕️ 🏕️ 🏕️</p>
+            </div>
+          </div>
+
+          <p
+            style="
+              max-width: 700px;
+              margin: 40px auto 20px auto;
+              text-align: center;
+            "
+          >
+            On the next page we’ll ask about your running and hiking pace. Use
+            the slider to find our pace or enter it manually. It will then give
+            you an estimated time to complete the trail
+          </p>
+
+          <div style="text-align: center; margin-top: 20px">
+            <button onclick="showCalculation()" id="buttons">Next</button>
+          </div>
+        </div>
+
+        <!-- Landing page 2 -->
+        <div id="calculation-section" style="display: none">
+          <div id="step-1" class="calc-step active">
+            <p style="margin-bottom: 5px">
+              Please choose your preferred category or manually enter your paces
+              below <br />
+              to estimate the time to complete the Pacific Crest Trail
+            </p>
+
+            <br />
+
+            <!-- Clickable Slider -->
+            <div class="slider-container">
+              <input
+                type="range"
+                id="realSlider"
+                min="1"
+                max="7"
+                step="1"
+                value="4"
+                class="styled-slider"
+                oninput="handleSliderChange(this.value)"
+              />
+              <div class="slider-labels">
+                <span>1</span><span>2</span><span>3</span><span>4</span
+                ><span>5</span><span>6</span><span>7</span>
+              </div>
+            </div>
+
+            <!-- Category Description -->
+            <p
+              id="category-description"
+              style="margin-top: 15px; font-size: 14px; color: #444"
+            ></p>
+
+            <br />
+
+            <!-- Manual Paces -->
+            <label for="runPace">Running pace (min/km):</label>
+            <input
+              type="text"
+              id="runPace"
+              placeholder="e.g. 14:00"
+              value="8:00"
+              onchange="calculateCategory()"
+            />
+
+            <br /><br />
+
+            <label for="hikePace">Hiking pace (min/km):</label>
+            <input
+              type="text"
+              id="hikePace"
+              placeholder="e.g. 40:00"
+              value="22:00"
+              onchange="calculateCategory()"
+            />
+
+            <br /><br />
+
+            <!-- Rest Days -->
+            <label for="restDaysMonth">Rest days per month:</label>
+            <input
+              type="number"
+              id="restDaysMonth"
+              min="0"
+              max="31"
+              value="2"
+              onchange="calculateCategory()"
+            />
+
+            <br /><br />
+
+            <!-- Direction Selection -->
+            <p>Which direction do you plan to hike?</p>
+            <label
+              ><input type="radio" name="routeDirection" value="1" checked />
+              South to North</label
+            ><br />
+            <label
+              ><input type="radio" name="routeDirection" value="-1" /> North to
+              South</label
+            >
+
+            <br /><br />
+
+            <!-- Calculate button-->
+            <!--  <button onclick="calculateCategory()" id="buttons">
+              Calculate time
+            </button> -->
+
+            <br />
+
+            <!-- Estimated time result -->
+            <p
+              id="estimatedTimeDisplay"
+              style="margin-top: 15px; font-weight: bold; color: #444"
+            ></p>
+
+            <button onclick="goBack()" id="buttons">Return</button>
+            <button onclick="calculateAndStartTrail()" id="buttons">
+              Begin the trail!
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="segments-container" style="display: none"></div>
+      <div
+        id="segment-navigation"
+        style="display: flex; justify-content: space-between; padding: 0px"
+      >
+        <button id="prevSegment" style="padding: 0px 5px; display: none">
+          Previous
+        </button>
+        <button
+          id="nextSegment"
+          style="padding: 0px 5px; margin-left: auto; display: none"
+        >
+          Next
+        </button>
+      </div>
     </div>
 
     <!-- Image Modal -->
-    <div id="imageModal" style="display: none;" onclick="closeImageModal()">
-        <img id="modalImage" src="" style="max-width: 90vw; max-height: 90vh; border: 4px solid white; border-radius: 8px;">
+    <div id="imageModal" style="display: none" onclick="closeImageModal()">
+      <img
+        id="modalImage"
+        src=""
+        style="
+          max-width: 90vw;
+          max-height: 90vh;
+          border: 4px solid white;
+          border-radius: 8px;
+        "
+      />
     </div>
+  </body>
 
-    </body>
+  <script>
+    // The map
+    mapboxgl.accessToken =
+      "pk.eyJ1IjoianVyb3MyMDIzIiwiYSI6ImNtNzF2ZXhyYjAzdDQyanIwZXEwY2kwM24ifQ.wswKD_UbiEQm8oTsQkyoKA";
 
-    <script>
+    const map = new mapboxgl.Map({
+      container: "map",
+      style: "mapbox://styles/mapbox/outdoors-v12",
+      center: [-119.5, 41],
+      zoom: 4.4,
+      minZoom: 4,
+      maxZoom: 10,
+      maxBounds: [
+        [-140, 25],
+        [-110, 55],
+      ],
+    });
 
-        // The map
-        mapboxgl.accessToken = 'pk.eyJ1IjoianVyb3MyMDIzIiwiYSI6ImNtNzF2ZXhyYjAzdDQyanIwZXEwY2kwM24ifQ.wswKD_UbiEQm8oTsQkyoKA';
-    
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/outdoors-v12',
-            center: [-119.5, 41],
-            zoom: 4.4,
-            minZoom: 4,
-            maxZoom: 10,
-            maxBounds: [[-140, 25], [-110, 55]]
+    let routeData = null;
+    let landmarkMarkers = [];
+    let segmentGeoJSON = null;
+    window.routeDirection = 1;
+
+    map.on("load", function () {
+      map.addSource("terrain-dem", {
+        type: "raster-dem",
+        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+        tileSize: 512,
+        maxzoom: 14,
+      });
+      map.addSource("hillshade-dem", {
+        type: "raster-dem",
+        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+        tileSize: 512,
+        maxzoom: 14,
+      });
+      map.setTerrain({ source: "terrain-dem", exaggeration: 5 });
+      map.addLayer({
+        id: "hillshading",
+        source: "hillshade-dem",
+        type: "hillshade",
+      });
+      loadRoute();
+    });
+
+    // Function where we call our GeoJSON-file
+    async function loadRoute() {
+      const response = await fetch("PCT_line_MileMarker_final.geojson");
+      routeData = await response.json();
+      map.addSource("pct-route", { type: "geojson", data: routeData });
+
+      map.addLayer({
+        id: "pct-line",
+        type: "line",
+        source: "pct-route",
+        paint: { "line-color": "#ff5733", "line-width": 3 },
+      });
+
+      extractMileMarkers();
+      createFullTrailElevationChart();
+    }
+
+    // Function to change the style of the map
+    function changeMapStyle() {
+      let selectedStyle = document.getElementById("mapStyle").value;
+
+      map.setStyle(selectedStyle);
+
+      map.once("style.load", function () {
+        if (routeData) {
+          if (!map.getSource("terrain-dem")) {
+            map.addSource("terrain-dem", {
+              type: "raster-dem",
+              url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+              tileSize: 512,
+              maxzoom: 14,
+            });
+          }
+
+          if (!map.getSource("hillshade-dem")) {
+            map.addSource("hillshade-dem", {
+              type: "raster-dem",
+              url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+              tileSize: 512,
+              maxzoom: 14,
+            });
+          }
+
+          map.setTerrain({
+            source: "terrain-dem",
+            exaggeration: parseFloat(
+              document.getElementById("exaggerationRange").value
+            ),
+          });
+
+          if (!map.getLayer("hillshading")) {
+            map.addLayer({
+              id: "hillshading",
+              source: "hillshade-dem",
+              type: "hillshade",
+            });
+          }
+
+          if (routeData) {
+            if (!map.getSource("pct-route")) {
+              map.addSource("pct-route", { type: "geojson", data: routeData });
+            }
+            if (!map.getLayer("pct-line")) {
+              map.addLayer({
+                id: "pct-line",
+                type: "line",
+                source: "pct-route",
+                paint: { "line-color": "#ff5733", "line-width": 3 },
+              });
+            }
+          }
+
+          if (segmentGeoJSON) {
+            if (!map.getSource("pct-segments")) {
+              map.addSource("pct-segments", {
+                type: "geojson",
+                data: segmentGeoJSON,
+              });
+              map.addLayer({
+                id: "pct-segments-line",
+                type: "line",
+                source: "pct-segments",
+                paint: {
+                  "line-color": "#1f78b4",
+                  "line-width": 4,
+                  "line-dasharray": [4, 2],
+                },
+              });
+            } else {
+              map.getSource("pct-segments").setData(segmentGeoJSON);
+            }
+          }
+        }
+      });
+    }
+
+    // Function to apply filters on the map
+    function applyFilter() {
+      let filterOption = document.getElementById("filterOptions").value;
+
+      if (filterOption === "all") {
+        map.setLayoutProperty("pct-segments-line", "visibility", "visible");
+      } else if (filterOption === "highlight") {
+        map.setLayoutProperty("pct-segments-line", "visibility", "none");
+      }
+    }
+
+    // Scrollytelling functions
+
+    // Load the CSV-file correct CSV-file depending on category/segments need to be shown in the scrollytelling
+    async function loadCSVData() {
+      let fileName = "";
+
+      switch (window.selectedSegments) {
+        case 50:
+          fileName = "Segmented_PCT_50_Segments.csv";
+          break;
+        case 45:
+          fileName = "Segmented_PCT_45_Segments.csv";
+          break;
+        case 40:
+          fileName = "Segmented_PCT_40_Segments.csv";
+          break;
+        case 35:
+          fileName = "Segmented_PCT_35_Segments.csv";
+          break;
+        case 30:
+          fileName = "Segmented_PCT_30_Segments.csv";
+          break;
+        case 25:
+          fileName = "Segmented_PCT_25_Segments.csv";
+          break;
+        case 20:
+          fileName = "Segmented_PCT_20_Segments.csv";
+          break;
+        default:
+          console.error("Invalid segment selection!");
+          return [];
+      }
+
+      console.log(`Loading CSV file: ${fileName}`);
+
+      const response = await fetch(fileName);
+      const csvText = await response.text();
+
+      let rows = csvText.split("\n").map((row) => row.split(","));
+      let headers = rows.shift();
+
+      let segmentData = rows
+        .map((row) => {
+          if (row.length < 13 || !row[0]) return null;
+
+          return {
+            segmentNumber: parseInt(row[0].trim()),
+            startLongitude: row[1] ? parseFloat(row[1].trim()) : null,
+            startLatitude: row[2] ? parseFloat(row[2].trim()) : null,
+            endLongitude: row[3] ? parseFloat(row[3].trim()) : null,
+            endLatitude: row[4] ? parseFloat(row[4].trim()) : null,
+            location: row[5] ? row[5].trim() : "",
+            landmarks: row[6] ? row[6].trim() : "",
+            landmarkLong: row[7] ? parseFloat(row[7].trim()) : null,
+            landmarkLat: row[8] ? parseFloat(row[8].trim()) : null,
+            description: row[9] ? row[9].trim() : "No description",
+            distanceKm: row[10] ? parseFloat(row[10].trim()) : 0,
+            part: row[11] ? row[11].trim() : "",
+            imagePath: row[12] ? row[12].trim() : "",
+          };
+        })
+        .filter((row) => row !== null);
+
+      return segmentData;
+    }
+
+    // Next step in HTML function
+    let currentStep = 1;
+
+    function nextStep(stepNumber) {
+      const allSteps = document.querySelectorAll(".calc-step");
+      allSteps.forEach((step) => {
+        step.classList.remove("active");
+        step.style.display = "none"; //
+      });
+
+      const next = document.getElementById(`step-${stepNumber}`);
+      if (next) {
+        next.style.display = "block";
+        setTimeout(() => next.classList.add("active"), 20);
+        currentStep = stepNumber;
+      }
+    }
+    // Click-on slider function
+    const categoryData = {
+      1: {
+        run: "14:00",
+        hike: "40:00",
+        text: "Nice and slow – enjoy attractions along the way.",
+      },
+      2: {
+        run: "10:00",
+        hike: "32:00",
+        text: "Mostly walking, little physical activity – take your time.",
+      },
+      3: {
+        run: "9:00",
+        hike: "25:00",
+        text: "Some light running, take it steady.",
+      },
+      4: { run: "8:00", hike: "22:00", text: "Moderately active person." },
+      5: { run: "7:00", hike: "20:00", text: "Active 3–5 times per week." },
+      6: {
+        run: "6:00",
+        hike: "18:00",
+        text: "More than average active – good base fitness.",
+      },
+      7: {
+        run: "4:30",
+        hike: "10:00",
+        text: "Ultra/Marathon runner – fast and efficient.",
+      },
+    };
+    // Select category
+    function selectCategory(category) {
+      const cat = categoryData[category];
+      if (!cat) return;
+      document.getElementById("runPace").value = cat.run;
+      document.getElementById("hikePace").value = cat.hike;
+      document.getElementById(
+        "category-description"
+      ).innerText = `Category ${category}: ${cat.text}`;
+
+      const sliderIndicator = document.getElementById("sliderIndicator");
+    }
+    function handleSliderChange(value) {
+      document.getElementById("realSlider").value = value; // Synkroniser hvis brugeren klikker på labels
+      selectCategory(parseInt(value));
+      calculateCategory();
+    }
+
+    // The calculator function
+    function calculateCategory() {
+      const runPace = document.getElementById("runPace").value;
+      const hikePace = document.getElementById("hikePace").value;
+      const restDaysMonth = parseInt(
+        document.getElementById("restDaysMonth").value,
+        10
+      );
+
+      if (!runPace || !hikePace) {
+        alert("Please enter your average paces");
+        return;
+      }
+
+      window.routeDirection = parseInt(
+        document.querySelector('input[name="routeDirection"]:checked').value,
+        10
+      );
+
+      const runSpeed = paceToSpeed(runPace);
+      const hikeSpeed = paceToSpeed(hikePace);
+      const estimatedBaseSpeed = (runSpeed + hikeSpeed) / 2;
+
+      let runWeight, hikeWeight;
+
+      if (estimatedBaseSpeed < 3) {
+        runWeight = 0.3;
+        hikeWeight = 0.7;
+      } else if (estimatedBaseSpeed < 4) {
+        runWeight = 0.4;
+        hikeWeight = 0.6;
+      } else if (estimatedBaseSpeed < 5) {
+        runWeight = 0.5;
+        hikeWeight = 0.5;
+      } else if (estimatedBaseSpeed < 6.5) {
+        runWeight = 0.6;
+        hikeWeight = 0.4;
+      } else {
+        runWeight = 0.7;
+        hikeWeight = 0.3;
+      }
+
+      const avgSpeed = runSpeed * runWeight + hikeSpeed * hikeWeight;
+
+      let category, segments;
+      if (avgSpeed < 2.5) {
+        category = "1";
+        segments = 50;
+      } else if (avgSpeed < 4) {
+        category = "2";
+        segments = 45;
+      } else if (avgSpeed < 5) {
+        category = "3";
+        segments = 40;
+      } else if (avgSpeed < 6) {
+        category = "4";
+        segments = 35;
+      } else if (avgSpeed < 7) {
+        category = "5";
+        segments = 30;
+      } else if (avgSpeed < 8.5) {
+        category = "6";
+        segments = 25;
+      } else {
+        category = "7";
+        segments = 20;
+      }
+
+      const totalDistance = 4280;
+      const activeHoursPerDay = 10;
+      const totalHikingHours = totalDistance / avgSpeed;
+      const hikingDays = totalHikingHours / activeHoursPerDay;
+      const totalRestDays = (hikingDays / 30) * restDaysMonth;
+      const totalDays = hikingDays + totalRestDays;
+      const formattedTime = formatTime(totalDays);
+
+      document.getElementById(
+        "estimatedTimeDisplay"
+      ).innerText = `Estimated time to complete the trail: ${formattedTime}`;
+
+      window.selectedSegments = segments;
+    }
+
+    // New function to begin the trail
+    function calculateAndStartTrail() {
+      calculateCategory();
+      setTimeout(() => {
+        startSegments();
+      }, 300); // evt. justér tiden hvis det fejler
+    }
+
+    calculateCategory();
+
+    // Function of the calculation
+    function showCalculation() {
+      const welcomeSection = document.getElementById("welcome-section");
+      welcomeSection.style.opacity = 1;
+      welcomeSection.style.transition = "opacity 0.5s ease";
+      welcomeSection.style.opacity = 0;
+
+      setTimeout(() => {
+        welcomeSection.style.display = "none";
+        document.getElementById("calculation-section").style.display = "block";
+
+        const firstStep = document.getElementById("step-1");
+        firstStep.style.display = "block";
+        setTimeout(() => firstStep.classList.add("active"), 10);
+      }, 500);
+    }
+
+    // Function of paces
+    function paceToSpeed(pace) {
+      const parts = pace.split(":");
+      if (parts.length !== 2) return 0;
+
+      const minutes = parseInt(parts[0], 10);
+      const seconds = parseInt(parts[1], 10);
+
+      if (isNaN(minutes) || isNaN(seconds)) return 0;
+
+      const totalMinutes = minutes + seconds / 60;
+      return 60 / totalMinutes;
+    }
+
+    // Function of format time
+    function formatTime(days) {
+      const months = Math.floor(days / 30);
+      const weeks = Math.floor((days % 30) / 7);
+      const remainingDays = Math.floor(days % 7);
+
+      let timeString = "";
+      if (months > 0) timeString += `${months} month${months > 1 ? "s" : ""}, `;
+      if (weeks > 0) timeString += `${weeks} week${weeks > 1 ? "s" : ""}, `;
+      if (remainingDays > 0)
+        timeString += `${remainingDays} day${remainingDays > 1 ? "s" : ""}`;
+
+      return timeString.trim().replace(/,\s*$/, "");
+    }
+
+    // Function of the return button
+    function goBack() {
+      const allSteps = document.querySelectorAll(".calc-step");
+      allSteps.forEach((step) => {
+        step.classList.remove("active");
+        step.style.display = "none";
+      });
+
+      if (currentStep > 1) {
+        currentStep -= 1;
+        const prev = document.getElementById(`step-${currentStep}`);
+        if (prev) {
+          prev.style.display = "block";
+          setTimeout(() => prev.classList.add("active"), 20);
+        }
+      } else {
+        const welcomeSection = document.getElementById("welcome-section");
+        welcomeSection.style.display = "block";
+        welcomeSection.style.opacity = 0;
+        setTimeout(() => {
+          welcomeSection.style.transition = "opacity 0.5s ease";
+          welcomeSection.style.opacity = 1;
+        }, 10);
+        currentStep = 0;
+      }
+    }
+
+    // Function of starting the segments
+    async function startSegments() {
+      const introStep = document.getElementById("intro-step");
+      const step4 = document.getElementById("step-4");
+      const categoryResult = document.getElementById("categoryResult");
+      const segmentsContainer = document.getElementById("segments-container");
+
+      // Tjek om elementerne eksisterer
+      if (introStep) introStep.style.display = "none";
+      if (step4) step4.style.display = "none";
+      if (categoryResult) categoryResult.style.display = "none";
+      if (segmentsContainer) {
+        segmentsContainer.style.display = "block";
+      } else {
+        console.error("segments-container findes ikke i DOM'en.");
+        return;
+      }
+
+      await updateSegments();
+
+      const firstSegmentIndex =
+        window.routeDirection === -1 ? window.selectedSegments : 1;
+      const firstSegment = document.querySelector(
+        `.step[data-segment='${firstSegmentIndex}']`
+      );
+
+      if (firstSegment) {
+        firstSegment.classList.add("active");
+        firstSegment.scrollIntoView({ behavior: "smooth" });
+      } else {
+        console.warn("Første segment ikke fundet!");
+      }
+      document.getElementById("nextSegment").style.display = "inline-block";
+    }
+
+    // Function to show south to north route
+    function generateSouthToNorthSegments(numSegments) {
+      let lineCoordinates = [...routeData.features[0].geometry.coordinates];
+      createSegments(numSegments, lineCoordinates, false);
+    }
+
+    // Function to show north to south route
+    function generateNorthToSouthSegments(numSegments) {
+      let lineCoordinates = [
+        ...routeData.features[0].geometry.coordinates,
+      ].reverse();
+      createSegments(numSegments, lineCoordinates, true);
+    }
+
+    // Function to create the segments
+    function createSegments(numSegments, lineCoordinates) {
+      const totalLength = lineCoordinates.length;
+      const segmentSize = Math.floor(totalLength / numSegments);
+
+      let segmentFeatures = [];
+      let scrollytellingContent = "";
+
+      for (let i = 0; i < numSegments; i++) {
+        let startIdx = i * segmentSize;
+        let endIdx = Math.min((i + 1) * segmentSize, totalLength - 1);
+        let segmentCoords = lineCoordinates.slice(startIdx, endIdx + 1);
+
+        let segmentIndex =
+          window.routeDirection === 1 ? i + 1 : numSegments - i;
+
+        segmentFeatures.push({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: segmentCoords },
+          properties: { segment: segmentIndex },
         });
-    
-        let routeData = null;
-        let landmarkMarkers = []; 
-        let segmentGeoJSON = null;
-        window.routeDirection = 1; 
-    
-        map.on('load', function () {
-            map.addSource('terrain-dem', {
-                'type': 'raster-dem',
-                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                'tileSize': 512,
-                'maxzoom': 14
-            });
-            map.addSource('hillshade-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
-            map.setTerrain({ 'source': 'terrain-dem', 'exaggeration': 5 });
-            map.addLayer({ 'id': 'hillshading', 'source': 'hillshade-dem', 'type': 'hillshade' });
-            loadRoute();
+
+        let visibilityClass = i === 0 ? "active" : "";
+        scrollytellingContent += `<div class="step ${visibilityClass}" data-segment="${segmentIndex}"><h2>Segment ${segmentIndex}</h2></div>`;
+      }
+
+      document.getElementById("segments-container").innerHTML =
+        scrollytellingContent;
+      segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
+
+      if (map.getSource("pct-segments")) {
+        map.getSource("pct-segments").setData(segmentGeoJSON);
+      } else {
+        map.addSource("pct-segments", {
+          type: "geojson",
+          data: segmentGeoJSON,
         });
-    
-        // Function where we call our GeoJSON-file
-        async function loadRoute() {
-            const response = await fetch('PCT_line_MileMarker_final.geojson');
-            routeData = await response.json();
-            map.addSource('pct-route', { type: 'geojson', data: routeData });
-    
-            map.addLayer({ id: 'pct-line', type: 'line', source: 'pct-route', paint: { 'line-color': '#ff5733', 'line-width': 3 } });
-        
-            extractMileMarkers();
-            createFullTrailElevationChart();
-            
+        map.addLayer({
+          id: "pct-segments-line",
+          type: "line",
+          source: "pct-segments",
+          paint: {
+            "line-color": "#1f78b4",
+            "line-width": 4,
+            "line-dasharray": [4, 2],
+          },
+        });
+      }
+    }
 
+    // Function to update the segments
+    async function updateSegments() {
+      if (!routeData) return;
+
+      const segmentData = await loadCSVData();
+      const numSegments = window.selectedSegments || 30;
+      let lineCoordinates = [...routeData.features[0].geometry.coordinates];
+      let originalProperties = [
+        ...routeData.features[0].properties.original_properties,
+      ];
+
+      if (window.routeDirection === -1) {
+        lineCoordinates.reverse();
+        originalProperties.reverse(); //
+      }
+
+      const totalLength = lineCoordinates.length;
+      const segmentSize = Math.floor(totalLength / numSegments);
+
+      let segmentFeatures = [];
+      let scrollytellingContent = "";
+
+      for (let i = 0; i < numSegments; i++) {
+        let startIdx = i * segmentSize;
+        let endIdx = Math.min((i + 1) * segmentSize, totalLength - 1);
+        let segmentCoords = lineCoordinates.slice(startIdx, endIdx + 1);
+        let segmentIndex =
+          window.routeDirection === 1 ? i + 1 : numSegments - i;
+
+        let segmentInfo = segmentData.find(
+          (s) => s.segmentNumber === segmentIndex
+        );
+        console.log(
+          "Image path for segment",
+          segmentIndex,
+          ":",
+          segmentInfo.imagePath
+        );
+
+        segmentFeatures.push({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: segmentCoords },
+          properties: { segment: segmentIndex },
+        });
+
+        let originalPropsSlice = originalProperties.slice(startIdx, endIdx + 1);
+        let waterCount = 0;
+        let shopCount = 0;
+
+        originalPropsSlice.forEach((prop) => {
+          if (prop?.Water && prop.Water !== "No") waterCount++;
+          if (prop?.Shop && prop.Shop !== "No") shopCount++;
+        });
+
+        let totalElevationGain = 0;
+        let totalElevationLoss = 0;
+
+        for (let j = 1; j < segmentCoords.length; j++) {
+          const prev = segmentCoords[j - 1][2] || 0;
+          const curr = segmentCoords[j][2] || 0;
+          const diff = curr - prev;
+          if (diff > 0) totalElevationGain += diff;
+          else if (diff < 0) totalElevationLoss += Math.abs(diff);
         }
-        
+        let elevationDiff = totalElevationGain - totalElevationLoss;
+        let elevationText = "";
 
-        // Function to change the style of the map
-        function changeMapStyle() {
-            let selectedStyle = document.getElementById("mapStyle").value;
-        
-            map.setStyle(selectedStyle);
-        
-            map.once("style.load", function () {
-                if (routeData) {
-                    if (!map.getSource('terrain-dem')) {
-                        map.addSource('terrain-dem', {
-                            type: 'raster-dem',
-                            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                            tileSize: 512,
-                            maxzoom: 14
-                        });
-                    }
-        
-                    if (!map.getSource('hillshade-dem')) {
-                        map.addSource('hillshade-dem', {
-                            type: 'raster-dem',
-                            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                            tileSize: 512,
-                            maxzoom: 14
-                        });
-                    }
-        
-                    map.setTerrain({ source: 'terrain-dem', exaggeration: parseFloat(document.getElementById("exaggerationRange").value) });
-        
-                    if (!map.getLayer('hillshading')) {
-                        map.addLayer({ 
-                            id: 'hillshading', 
-                            source: 'hillshade-dem', 
-                            type: 'hillshade' 
-                        });
-                    }
-        
-                    if (routeData) {
-                        if (!map.getSource('pct-route')) {
-                            map.addSource('pct-route', { type: 'geojson', data: routeData });
-                        }
-                        if (!map.getLayer('pct-line')) {
-                            map.addLayer({
-                                id: 'pct-line',
-                                type: 'line',
-                                source: 'pct-route',
-                                paint: { 'line-color': '#ff5733', 'line-width': 3 }
-                            });
-                        }
-                    }
-        
-                    if (segmentGeoJSON) {
-                        if (!map.getSource('pct-segments')) {
-                            map.addSource('pct-segments', { type: 'geojson', data: segmentGeoJSON });
-                            map.addLayer({
-                                id: 'pct-segments-line',
-                                type: 'line',
-                                source: 'pct-segments',
-                                paint: { 'line-color': '#1f78b4', 'line-width': 4, 'line-dasharray': [4, 2] }
-                            });
-                        } else {
-                            map.getSource('pct-segments').setData(segmentGeoJSON);
-                        }
-                    }
-                }
-        
-                });
-            }
-
-        
-        // Function to apply filters on the map
-        function applyFilter() {
-            let filterOption = document.getElementById("filterOptions").value;
-        
-            if (filterOption === "all") {
-                map.setLayoutProperty('pct-segments-line', 'visibility', 'visible');
-            } else if (filterOption === "highlight") {
-                map.setLayoutProperty('pct-segments-line', 'visibility', 'none');
-            }
+        if (elevationDiff > 500) {
+          elevationText = `<i class="fa-solid fa-arrow-trend-up"></i> This segment will test your climbing skills!`;
+        } else if (elevationDiff < -500) {
+          elevationText = `<i class="fa-solid fa-arrow-trend-down"></i> Enjoy the descent – your legs will thank you!`;
+        } else {
+          elevationText = `<i class="fa-solid fa-arrow-right"></i> A relatively balanced segment – good for cruising.`;
         }
 
-        // Scrollytelling functions
+        let animalsInSegment = new Set();
+        originalPropsSlice.forEach((prop) => {
+          if (prop?.Wolf && prop.Wolf !== "No") animalsInSegment.add("Wolf");
+          if (prop?.Bear && prop.Bear !== "No") animalsInSegment.add("Bear");
+          if (prop?.Puma && prop.Puma !== "No") animalsInSegment.add("Puma");
+          if (prop?.Scorpion && prop.Scorpion !== "No")
+            animalsInSegment.add("Scorpion");
+          if (prop?.Rattlesnake && prop.Rattlesnake !== "No")
+            animalsInSegment.add("Rattlesnake");
+        });
+        let animalCounts = {
+          Wolf: 0,
+          Bear: 0,
+          Puma: 0,
+          Scorpion: 0,
+          Rattlesnake: 0,
+        };
 
-        // Load the CSV-file correct CSV-file depending on category/segments need to be shown in the scrollytelling
-        async function loadCSVData() {
-            let fileName = "";
+        originalPropsSlice.forEach((prop) => {
+          if (prop?.Wolf && prop.Wolf !== "No") animalCounts.Wolf++;
+          if (prop?.Bear && prop.Bear !== "No") animalCounts.Bear++;
+          if (prop?.Puma && prop.Puma !== "No") animalCounts.Puma++;
+          if (prop?.Scorpion && prop.Scorpion !== "No") animalCounts.Scorpion++;
+          if (prop?.Rattlesnake && prop.Rattlesnake !== "No")
+            animalCounts.Rattlesnake++;
+        });
+        let animalSummaryText = "";
+        let mostObserved = null;
+        let highestCount = 0;
 
-            switch (window.selectedSegments) {
-                case 50:
-                    fileName = "Segmented_PCT_50_Segments.csv";
-                    break;
-                case 45:
-                    fileName = "Segmented_PCT_45_Segments.csv";
-                    break;
-                case 40:
-                    fileName = "Segmented_PCT_40_Segments.csv";
-                    break;
-                case 35:
-                    fileName = "Segmented_PCT_35_Segments.csv";
-                    break;
-                case 30:
-                    fileName = "Segmented_PCT_30_Segments.csv";
-                    break;
-                case 25:
-                    fileName = "Segmented_PCT_25_Segments.csv";
-                    break;
-                case 20:
-                    fileName = "Segmented_PCT_20_Segments.csv";
-                    break;
-                default:
-                    console.error("Invalid segment selection!");
-                    return [];
-            }
-
-            console.log(`Loading CSV file: ${fileName}`);
-
-            const response = await fetch(fileName);
-            const csvText = await response.text();
-    
-            let rows = csvText.split("\n").map(row => row.split(","));
-            let headers = rows.shift();  
-
-            let segmentData = rows.map(row => {
-                if (row.length < 13 || !row[0]) return null; 
-
-                return {
-                    segmentNumber: parseInt(row[0].trim()), 
-                    startLongitude: row[1] ? parseFloat(row[1].trim()) : null, 
-                    startLatitude: row[2] ? parseFloat(row[2].trim()) : null, 
-                    endLongitude: row[3] ? parseFloat(row[3].trim()) : null, 
-                    endLatitude: row[4] ? parseFloat(row[4].trim()) : null,
-                    location: row[5] ? row[5].trim() : "",  
-                    landmarks: row[6] ? row[6].trim() : "",
-                    landmarkLong: row[7] ? parseFloat(row[7].trim()) : null,
-                    landmarkLat: row[8] ? parseFloat(row[8].trim()) : null,
-                    description: row[9] ? row[9].trim() : "No description",
-                    distanceKm: row[10] ? parseFloat(row[10].trim()) : 0,
-                    part: row[11] ? row[11].trim() : "",
-                    imagePath: row[12] ? row[12].trim() : "" 
-                };
-            }).filter(row => row !== null); 
-
-            return segmentData; 
+        // Find dyret med flest observationer
+        for (const [animal, count] of Object.entries(animalCounts)) {
+          if (count > highestCount) {
+            highestCount = count;
+            mostObserved = animal;
+          }
         }
 
-        // Next step in HTML function
-        let currentStep = 1;
+        if (mostObserved && highestCount > 0) {
+          const emoji = animalDescriptions[mostObserved].emoji;
+          const animalName = mostObserved.toLowerCase();
 
-        function nextStep(stepNumber) {
-            const allSteps = document.querySelectorAll('.calc-step');
-            allSteps.forEach(step => {
-                step.classList.remove('active');
-                step.style.display = 'none'; // 
-            });
-        
-            const next = document.getElementById(`step-${stepNumber}`);
-            if (next) {
-                next.style.display = 'block';
-                setTimeout(() => next.classList.add('active'), 20);
-                currentStep = stepNumber;
-            }
-        }        
-            // Click-on slider function
-            const categoryData = {
-                1: { run: "14:00", hike: "40:00", text: "Nice and slow – enjoy attractions along the way." },
-                2: { run: "10:00", hike: "32:00", text: "Mostly walking, little physical activity – take your time." },
-                3: { run: "9:00", hike: "25:00", text: "Some light running, take it steady." },
-                4: { run: "8:00", hike: "22:00", text: "Moderately active person." },
-                5: { run: "7:00", hike: "20:00", text: "Active 3–5 times per week." },
-                6: { run: "6:00", hike: "18:00", text: "More than average active – good base fitness." },
-                7: { run: "4:30", hike: "10:00", text: "Ultra/Marathon runner – fast and efficient." }
-            };
-             // Select category
-            function selectCategory(category) {
-                const cat = categoryData[category];
-                if (!cat) return;
-                document.getElementById("runPace").value = cat.run;
-                document.getElementById("hikePace").value = cat.hike;
-                document.getElementById("category-description").innerText = `Category ${category}: ${cat.text}`;
-            
-                const sliderIndicator = document.getElementById("sliderIndicator");
-                
-            }
-            function handleSliderChange(value) {
-                document.getElementById("realSlider").value = value; // Synkroniser hvis brugeren klikker på labels
-                selectCategory(parseInt(value));
-            }
-            
-
-            // The calculator function 
-            function calculateCategory() {
-            const runPace = document.getElementById("runPace").value;
-            const hikePace = document.getElementById("hikePace").value;
-            const restDaysMonth = parseInt(document.getElementById("restDaysMonth").value, 10);
-        
-            if (!runPace || !hikePace) {
-                alert("Please enter your average paces");
-                return;
-            }
-        
-            window.routeDirection = parseInt(document.querySelector('input[name="routeDirection"]:checked').value, 10);
-        
-            const runSpeed = paceToSpeed(runPace);
-            const hikeSpeed = paceToSpeed(hikePace);
-            const estimatedBaseSpeed = (runSpeed + hikeSpeed) / 2;
-                   
-            let runWeight, hikeWeight;
-        
-            if (estimatedBaseSpeed < 3) {
-                runWeight = 0.3;
-                hikeWeight = 0.7;
-            } else if (estimatedBaseSpeed < 4) {
-                runWeight = 0.4;
-                hikeWeight = 0.6;
-            } else if (estimatedBaseSpeed < 5) {
-                runWeight = 0.5;
-                hikeWeight = 0.5;
-            } else if (estimatedBaseSpeed < 6.5) {
-                runWeight = 0.6;
-                hikeWeight = 0.4;
-            } else {
-                runWeight = 0.7;
-                hikeWeight = 0.3;
-            }
-        
-            const avgSpeed = (runSpeed * runWeight) + (hikeSpeed * hikeWeight);
-        
-            let category, segments;
-            if (avgSpeed < 2.5) { category = "1"; segments = 50; }
-            else if (avgSpeed < 4) { category = "2"; segments = 45; }
-            else if (avgSpeed < 5) { category = "3"; segments = 40; }
-            else if (avgSpeed < 6) { category = "4"; segments = 35; }
-            else if (avgSpeed < 7) { category = "5"; segments = 30; }
-            else if (avgSpeed < 8.5) { category = "6"; segments = 25; }
-            else { category = "7"; segments = 20; }
-        
-            const totalDistance = 4280;
-            const activeHoursPerDay = 10;
-            const totalHikingHours = totalDistance / avgSpeed;
-            const hikingDays = totalHikingHours / activeHoursPerDay;
-            const totalRestDays = (hikingDays / 30) * restDaysMonth;
-            const totalDays = hikingDays + totalRestDays;
-            const formattedTime = formatTime(totalDays);
-        
-            document.getElementById("estimatedTimeDisplay").innerText = `Estimated time to complete the trail: ${formattedTime}`;
-        
-            window.selectedSegments = segments;
+          animalSummaryText = `<strong>Most sightings of ${emoji} in this area:</strong> ${highestCount} observations`;
         }
-         // New function to begin the trail
-         function calculateAndStartTrail() {
-            calculateCategory(); 
-            setTimeout(() => {
-                startSegments(); 
-            }, 300); // evt. justér tiden hvis det fejler
+        const totalSegments = window.selectedSegments;
+        window.totalSegments = totalSegments; //globalt brug
+
+        let animalHTML = "";
+        if (animalsInSegment.size > 0) {
+          animalHTML += `<br><strong>Animals in the area:</strong><br>`;
+          animalsInSegment.forEach((animal) => {
+            const info = animalDescriptions[animal];
+            animalHTML += `${info.emoji} <strong>${animal}:</strong> ${info.text}<br>`;
+          });
         }
 
-        // Function of the calculation
-        function showCalculation() {
-            const welcomeSection = document.getElementById("welcome-section");
-            welcomeSection.style.opacity = 1;
-            welcomeSection.style.transition = "opacity 0.5s ease";
-            welcomeSection.style.opacity = 0;
-        
-            setTimeout(() => {
-                welcomeSection.style.display = "none";
-                document.getElementById("calculation-section").style.display = "block";
-        
-                const firstStep = document.getElementById("step-1");
-                firstStep.style.display = "block";
-                setTimeout(() => firstStep.classList.add('active'), 10);
-            }, 500);
-        }        
-
-        // Function of paces
-        function paceToSpeed(pace) {
-            const parts = pace.split(":");
-            if (parts.length !== 2) return 0;
-    
-            const minutes = parseInt(parts[0], 10);
-            const seconds = parseInt(parts[1], 10);
-    
-            if (isNaN(minutes) || isNaN(seconds)) return 0;
-    
-            const totalMinutes = minutes + (seconds / 60);
-            return 60 / totalMinutes;
-        }
-
-        // Function of format time
-        function formatTime(days) {
-            const months = Math.floor(days / 30);
-            const weeks = Math.floor((days % 30) / 7);
-            const remainingDays = Math.floor(days % 7);
-        
-            let timeString = "";
-            if (months > 0) timeString += `${months} month${months > 1 ? "s" : ""}, `;
-            if (weeks > 0) timeString += `${weeks} week${weeks > 1 ? "s" : ""}, `;
-            if (remainingDays > 0) timeString += `${remainingDays} day${remainingDays > 1 ? "s" : ""}`;
-        
-            return timeString.trim().replace(/,\s*$/, "");
-        }
-
-        // Function of the return button
-        function goBack() {
-            const allSteps = document.querySelectorAll('.calc-step');
-            allSteps.forEach(step => {
-                step.classList.remove('active');
-                step.style.display = 'none';
-            });
-        
-            if (currentStep > 1) {
-                currentStep -= 1;
-                const prev = document.getElementById(`step-${currentStep}`);
-                if (prev) {
-                    prev.style.display = 'block';
-                    setTimeout(() => prev.classList.add("active"), 20);
-                }
-            } else {
-                const welcomeSection = document.getElementById("welcome-section");
-                welcomeSection.style.display = "block";
-                welcomeSection.style.opacity = 0;
-                setTimeout(() => {
-                    welcomeSection.style.transition = "opacity 0.5s ease";
-                    welcomeSection.style.opacity = 1;
-                }, 10);
-                currentStep = 0;
-            }
-        }        
-    
-        // Function of starting the segments
-        async function startSegments() {
-            const introStep = document.getElementById("intro-step");
-            const step4 = document.getElementById("step-4");
-            const categoryResult = document.getElementById("categoryResult");
-            const segmentsContainer = document.getElementById("segments-container");
-
-            // Tjek om elementerne eksisterer
-            if (introStep) introStep.style.display = "none";
-            if (step4) step4.style.display = "none";
-            if (categoryResult) categoryResult.style.display = "none";
-            if (segmentsContainer) {
-                segmentsContainer.style.display = "block";
-            } else {
-                console.error("segments-container findes ikke i DOM'en.");
-                return;
-            }
-
-            await updateSegments();
-
-            const firstSegmentIndex = window.routeDirection === -1 ? window.selectedSegments : 1;
-            const firstSegment = document.querySelector(`.step[data-segment='${firstSegmentIndex}']`);
-
-            if (firstSegment) {
-                firstSegment.classList.add("active");
-                firstSegment.scrollIntoView({ behavior: "smooth" });
-            } else {
-                console.warn("Første segment ikke fundet!");
-            }
-            document.getElementById("nextSegment").style.display = "inline-block";
-        }
-
-        // Function to show south to north route
-        function generateSouthToNorthSegments(numSegments) {
-            let lineCoordinates = [...routeData.features[0].geometry.coordinates];
-            createSegments(numSegments, lineCoordinates, false);
-        }
-    
-        // Function to show north to south route
-        function generateNorthToSouthSegments(numSegments) {
-            let lineCoordinates = [...routeData.features[0].geometry.coordinates].reverse();
-            createSegments(numSegments, lineCoordinates, true);
-        }
-
-        // Function to create the segments
-        function createSegments(numSegments, lineCoordinates) {
-            const totalLength = lineCoordinates.length;
-            const segmentSize = Math.floor(totalLength / numSegments);
-        
-            let segmentFeatures = [];
-            let scrollytellingContent = "";
-        
-            for (let i = 0; i < numSegments; i++) {
-                let startIdx = i * segmentSize;
-                let endIdx = Math.min((i + 1) * segmentSize, totalLength - 1);
-                let segmentCoords = lineCoordinates.slice(startIdx, endIdx + 1);
-        
-                let segmentIndex = window.routeDirection === 1 ? i + 1 : numSegments - i; 
-        
-                segmentFeatures.push({
-                    type: "Feature",
-                    geometry: { type: "LineString", coordinates: segmentCoords },
-                    properties: { segment: segmentIndex }
-                });
-        
-                let visibilityClass = i === 0 ? "active" : "";
-                scrollytellingContent += `<div class="step ${visibilityClass}" data-segment="${segmentIndex}"><h2>Segment ${segmentIndex}</h2></div>`;
-            }
-        
-            document.getElementById("segments-container").innerHTML = scrollytellingContent;
-            segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
-        
-            if (map.getSource('pct-segments')) {
-                map.getSource('pct-segments').setData(segmentGeoJSON);
-            } else {
-                map.addSource('pct-segments', { type: 'geojson', data: segmentGeoJSON });
-                map.addLayer({
-                    id: 'pct-segments-line',
-                    type: 'line',
-                    source: 'pct-segments',
-                    paint: { 'line-color': '#1f78b4', 'line-width': 4, 'line-dasharray': [4, 2] }
-                });
-            }
-        }
-
-        // Function to update the segments
-        async function updateSegments() {
-            if (!routeData) return;
-
-            const segmentData = await loadCSVData(); 
-            const numSegments = window.selectedSegments || 30;
-            let lineCoordinates = [...routeData.features[0].geometry.coordinates];
-            let originalProperties = [...routeData.features[0].properties.original_properties];
-        
-            if (window.routeDirection === -1) {
-                lineCoordinates.reverse();
-                originalProperties.reverse();  // 
-            }
-        
-            const totalLength = lineCoordinates.length;
-            const segmentSize = Math.floor(totalLength / numSegments);
-        
-            let segmentFeatures = [];
-            let scrollytellingContent = "";
-        
-            for (let i = 0; i < numSegments; i++) {
-                let startIdx = i * segmentSize;
-                let endIdx = Math.min((i + 1) * segmentSize, totalLength - 1);
-                let segmentCoords = lineCoordinates.slice(startIdx, endIdx + 1);
-                let segmentIndex = window.routeDirection === 1 ? i + 1 : numSegments - i;
-
-                let segmentInfo = segmentData.find(s => s.segmentNumber === segmentIndex);
-                console.log("Image path for segment", segmentIndex, ":", segmentInfo.imagePath);
-
-                segmentFeatures.push({
-                    type: "Feature",
-                    geometry: { type: "LineString", coordinates: segmentCoords },
-                    properties: { segment: segmentIndex }
-                });
-
-                let originalPropsSlice = originalProperties.slice(startIdx, endIdx + 1);
-                let waterCount = 0;
-                let shopCount = 0;
-
-                originalPropsSlice.forEach(prop => {
-                    if (prop?.Water && prop.Water !== "No") waterCount++;
-                    if (prop?.Shop && prop.Shop !== "No") shopCount++;
-                });
-     
-                let totalElevationGain = 0;
-                let totalElevationLoss = 0;
-
-                for (let j = 1; j < segmentCoords.length; j++) {
-                    const prev = segmentCoords[j - 1][2] || 0;
-                    const curr = segmentCoords[j][2] || 0;
-                    const diff = curr - prev;
-                    if (diff > 0) totalElevationGain += diff;
-                    else if (diff < 0) totalElevationLoss += Math.abs(diff);
-                }
-                let elevationDiff = totalElevationGain - totalElevationLoss;
-                let elevationText = "";
-
-                if (elevationDiff > 500) {
-                    elevationText = `<i class="fa-solid fa-arrow-trend-up"></i> This segment will test your climbing skills!`;
-                } else if (elevationDiff < -500) {
-                    elevationText = `<i class="fa-solid fa-arrow-trend-down"></i> Enjoy the descent – your legs will thank you!`;
-                } else {
-                    elevationText = `<i class="fa-solid fa-arrow-right"></i> A relatively balanced segment – good for cruising.`;
-                }
-                
-
-                let animalsInSegment = new Set();
-                originalPropsSlice.forEach(prop => {
-                    if (prop?.Wolf && prop.Wolf !== "No") animalsInSegment.add("Wolf");
-                    if (prop?.Bear && prop.Bear !== "No") animalsInSegment.add("Bear");
-                    if (prop?.Puma && prop.Puma !== "No") animalsInSegment.add("Puma");
-                    if (prop?.Scorpion && prop.Scorpion !== "No") animalsInSegment.add("Scorpion");
-                    if (prop?.Rattlesnake && prop.Rattlesnake !== "No") animalsInSegment.add("Rattlesnake");
-                });
-                let animalCounts = {
-                    Wolf: 0,
-                    Bear: 0,
-                    Puma: 0,
-                    Scorpion: 0,
-                    Rattlesnake: 0
-                };
-                
-                originalPropsSlice.forEach(prop => {
-                    if (prop?.Wolf && prop.Wolf !== "No") animalCounts.Wolf++;
-                    if (prop?.Bear && prop.Bear !== "No") animalCounts.Bear++;
-                    if (prop?.Puma && prop.Puma !== "No") animalCounts.Puma++;
-                    if (prop?.Scorpion && prop.Scorpion !== "No") animalCounts.Scorpion++;
-                    if (prop?.Rattlesnake && prop.Rattlesnake !== "No") animalCounts.Rattlesnake++;
-                });
-                let animalSummaryText = "";
-                let mostObserved = null;
-                let highestCount = 0;
-
-                // Find dyret med flest observationer
-                for (const [animal, count] of Object.entries(animalCounts)) {
-                    if (count > highestCount) {
-                        highestCount = count;
-                        mostObserved = animal;
-                    }
-                }
-
-                if (mostObserved && highestCount > 0) {
-                    const emoji = animalDescriptions[mostObserved].emoji;
-                    const animalName = mostObserved.toLowerCase();
-                    
-                    animalSummaryText = `<strong>Most sightings of ${emoji} in this area:</strong> ${highestCount} observations`;
-                }
-                const totalSegments = window.selectedSegments;
-                window.totalSegments = totalSegments; //globalt brug
-
-
-
-
-
-                let animalHTML = "";
-                if (animalsInSegment.size > 0) {
-                    animalHTML += `<br><strong>Animals in the area:</strong><br>`;
-                    animalsInSegment.forEach(animal => {
-                        const info = animalDescriptions[animal];
-                        animalHTML += `${info.emoji} <strong>${animal}:</strong> ${info.text}<br>`;
-                    });
-                }
-        
-                // Where we change the information from the CSV-files onto the scrollytelling
-                scrollytellingContent += `
+        // Where we change the information from the CSV-files onto the scrollytelling
+        scrollytellingContent += `
                     <div class="step" data-segment="${segmentIndex}">
-                        <h2 style="margin-bottom: 0px">${segmentInfo && segmentInfo.location ? segmentInfo.location : "Segment " + segmentIndex}</h2>
+                        <h2 style="margin-bottom: 0px">${
+                          segmentInfo && segmentInfo.location
+                            ? segmentInfo.location
+                            : "Segment " + segmentIndex
+                        }</h2>
         
                         <div class="chart-container" id="chart-container-${segmentIndex}">
                             <canvas id="elevationChart-${segmentIndex}"></canvas>
@@ -854,23 +1363,41 @@
                         </div>
 
                         <p style="font-size: 12px; " class="chart-info-line" >
-                            📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(1)} km | 
-                            📈<strong>Elevation gain:</strong> ${Math.round(totalElevationGain)} m |
-                            📉<strong>Elevation loss:</strong> ${Math.round(totalElevationLoss)} m |
+                            📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(
+                              1
+                            )} km | 
+                            📈<strong>Elevation gain:</strong> ${Math.round(
+                              totalElevationGain
+                            )} m |
+                            📉<strong>Elevation loss:</strong> ${Math.round(
+                              totalElevationLoss
+                            )} m |
                             ${elevationText}
                         </p>
 
                         <div class="description-image-wrapper">
                             <div class="description-text">
-                                <p>${segmentInfo ? segmentInfo.description : "No description available."}</p>
+                                <p>${
+                                  segmentInfo
+                                    ? segmentInfo.description
+                                    : "No description available."
+                                }</p>
                             </div>
                             ${
-                                segmentInfo && segmentInfo.imagePath
-                                    ? `<div class="thumbnail-wrapper" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
-                                            <img src="${segmentInfo.imagePath}" alt="Segment image" class="thumbnail" onclick="openImageModal('${segmentInfo.imagePath}')">
-                                            ${segmentInfo.landmarks ? `<p style="font-size: 10px; margin-top: 0px; color: #666;">${segmentInfo.landmarks}</p>` : ""}
+                              segmentInfo && segmentInfo.imagePath
+                                ? `<div class="thumbnail-wrapper" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
+                                            <img src="${
+                                              segmentInfo.imagePath
+                                            }" alt="Segment image" class="thumbnail" onclick="openImageModal('${
+                                    segmentInfo.imagePath
+                                  }')">
+                                            ${
+                                              segmentInfo.landmarks
+                                                ? `<p style="font-size: 10px; margin-top: 0px; color: #666;">${segmentInfo.landmarks}</p>`
+                                                : ""
+                                            }
                                         </div>`
-                                    : ""
+                                : ""
                             }
                         </div>    
 
@@ -882,7 +1409,19 @@
                                 <div id="weather-chart-container-${segmentIndex}" style="margin-bottom: 8px;"></div>
                                 <label for="weatherMonth-${segmentIndex}" style="font-size: 12px;">Choose month:</label>
                                 <select id="weatherMonth-${segmentIndex}" style="font-size: 12px; margin-bottom: 5px;">
-                                    ${[...Array(12)].map((_, m) => `<option value="${String(m + 1).padStart(2, '0')}">${new Date(0, m).toLocaleString('en', { month: 'long' })}</option>`).join("")}
+                                    ${[...Array(12)]
+                                      .map(
+                                        (_, m) =>
+                                          `<option value="${String(
+                                            m + 1
+                                          ).padStart(2, "0")}">${new Date(
+                                            0,
+                                            m
+                                          ).toLocaleString("en", {
+                                            month: "long",
+                                          })}</option>`
+                                      )
+                                      .join("")}
                                 </select><br>
                                 <button onclick="updateWeatherForSegment(${segmentIndex})" style="font-size: 12px;">Show Weather</button>
                             </div>
@@ -891,33 +1430,50 @@
                             <!-- Animals box -->
                             <div class="info-box" style="flex: 1; background: #f9f9f9; padding: 5px; border-radius: 8px;">
                                 <strong>Animals</strong><br><br>
-                                ${["Wolf", "Bear", "Puma", "Scorpion", "Rattlesnake"].map(animal => {
-                                    const present = animalsInSegment.has(animal);
-                                    const icon = animalDescriptions[animal].emoji;
-                                    const style = present ? "opacity: 1;" : "opacity: 0.3;";
+                                ${[
+                                  "Wolf",
+                                  "Bear",
+                                  "Puma",
+                                  "Scorpion",
+                                  "Rattlesnake",
+                                ]
+                                  .map((animal) => {
+                                    const present =
+                                      animalsInSegment.has(animal);
+                                    const icon =
+                                      animalDescriptions[animal].emoji;
+                                    const style = present
+                                      ? "opacity: 1;"
+                                      : "opacity: 0.3;";
                                     return `<span style="font-size: 22px; ${style}">${icon}</span>`;
-                                }).join(" ")} <br> 
+                                  })
+                                  .join(" ")} <br> 
                                 <p style="font-size: 12px; margin-bottom: 10px;">${animalSummaryText}</p>
                             </div>
 
                             <!-- Water points box -->
                             <div class="info-box" style="flex: 1; background: #f9f9f9; padding: 5px; border-radius: 8px;">
                                 <strong>Water</strong><br><br>
-                                ${Array.from({ length: 4 }).map((_, i) => {
-                                    const active = i < Math.ceil((waterCount / 20) * 4); 
-                                    return `<span style="font-size: 20px; ${active ? "opacity: 1;" : "opacity: 0.2;"}">💧</span>`;
-                                }).join(" ")} <br>
+                                ${Array.from({ length: 4 })
+                                  .map((_, i) => {
+                                    const active =
+                                      i < Math.ceil((waterCount / 20) * 4);
+                                    return `<span style="font-size: 20px; ${
+                                      active ? "opacity: 1;" : "opacity: 0.2;"
+                                    }">💧</span>`;
+                                  })
+                                  .join(" ")} <br>
                                 <p style="font-size: 14px; color: #555; margin: 0;">
                                     ${
-                                        waterCount  <= 3
-                                            ? "🚱 Almost no posibilites for water in this segment – carry extra!"
-                                            : waterCount <= 5
-                                                ? "⚠️ Very limited water. Fill up when possible."
-                                                : waterCount <= 10
-                                                    ? "🚰 Sparse water availability. Plan ahead."
-                                                     : waterCount <= 15
-                                                    ? "  Average water availability."
-                                                    : "✅ Several water sources available."
+                                      waterCount <= 3
+                                        ? "🚱 Almost no posibilites for water in this segment – carry extra!"
+                                        : waterCount <= 5
+                                        ? "⚠️ Very limited water. Fill up when possible."
+                                        : waterCount <= 10
+                                        ? "🚰 Sparse water availability. Plan ahead."
+                                        : waterCount <= 15
+                                        ? "  Average water availability."
+                                        : "✅ Several water sources available."
                                     }
                                 </p>
                                 <p style="font-size: 12px; margin-bottom: 10px;" ><strong>Water points:</strong> ${waterCount}</p>
@@ -926,752 +1482,834 @@
                             <!-- Campsites/shops box -->
                             <div class="info-box" style="flex: 1; background: #f9f9f9; padding: 5px; border-radius: 8px;">
                                 <strong>Shops & Camps</strong><br><br>
-                                ${Array.from({ length: 4 }).map((_, i) => {
-                                    const active = i < Math.ceil((shopCount / 10) * 4); 
-                                    return `<span style="font-size: 20px; ${active ? "opacity: 1;" : "opacity: 0.2;"}">🏕️</span>`;
-                                }).join(" ")} <br>
+                                ${Array.from({ length: 4 })
+                                  .map((_, i) => {
+                                    const active =
+                                      i < Math.ceil((shopCount / 10) * 4);
+                                    return `<span style="font-size: 20px; ${
+                                      active ? "opacity: 1;" : "opacity: 0.2;"
+                                    }">🏕️</span>`;
+                                  })
+                                  .join(" ")} <br>
                                 <p style="font-size: 12px; margin-bottom: 10px;" ><strong>Shops and campsites:</strong> ${shopCount}</p>
                             </div>
                         </div>
                         
                     </div>`;
-                    
-                    
-                    
-            }
-            console.log(segmentData);
-        
-            document.getElementById("segments-container").innerHTML = scrollytellingContent;
-            segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
-            let currentSegment = window.routeDirection === -1 ? window.selectedSegments : 1;
-            const totalSegments = window.selectedSegments;
+      }
+      console.log(segmentData);
 
-            document.getElementById("prevSegment").addEventListener("click", () => {
-                if (currentSegment > 1) {
-                    currentSegment--;
-                    scrollToSegment(currentSegment);
-                }
-            });
+      document.getElementById("segments-container").innerHTML =
+        scrollytellingContent;
+      segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
+      let currentSegment =
+        window.routeDirection === -1 ? window.selectedSegments : 1;
+      const totalSegments = window.selectedSegments;
 
-            document.getElementById("nextSegment").addEventListener("click", () => {
-                if (currentSegment < totalSegments) {
-                    currentSegment++;
-                    scrollToSegment(currentSegment);
-                }
-            });
-
-             window.allSegmentFeatures = segmentFeatures;
-        
-            if (!map.getSource('pct-segments')) {
-                map.addSource('pct-segments', { type: 'geojson', data: segmentGeoJSON });
-                map.addLayer({
-                    id: 'pct-segments-line',
-                    type: 'line',
-                    source: 'pct-segments',
-                    paint: { 'line-color': '#1f78b4', 'line-width': 4, 'line-dasharray': [4, 2] }
-                });
-            } else {
-                map.getSource('pct-segments').setData(segmentGeoJSON);
-            }
-        
-            // Marker with image as landmark
-segmentData.forEach(segmentInfo => {
-    if (segmentInfo.landmarkLong && segmentInfo.landmarkLat) {
-        const el = document.createElement('div');
-        el.className = 'marker';
-        el.style.width = '40px';
-        el.style.height = '40px';
-        el.style.borderRadius = '6px';
-        el.style.border = '2px solid white';
-        el.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
-        el.style.cursor = 'pointer';
-        el.title = segmentInfo.landmarks; // Tooltip på hover
-
-        // Brug billedet hvis der er ét, ellers fallback
-        if (segmentInfo.imagePath) {
-            el.style.backgroundImage = `url(${segmentInfo.imagePath})`;
-            el.style.backgroundSize = 'cover';
-            el.style.backgroundPosition = 'center';
-        } else {
-            el.style.backgroundColor = '#e74c3c'; // fallback rød farve
+      document.getElementById("prevSegment").addEventListener("click", () => {
+        if (currentSegment > 1) {
+          currentSegment--;
+          scrollToSegment(currentSegment);
         }
+      });
 
-        // Klik viser billedet stort
-        el.addEventListener('click', () => {
-            if (segmentInfo.imagePath) {
-                openImageModal(`${segmentInfo.imagePath}`);
-            } else {
-                alert(segmentInfo.landmarks || "No image available.");
-            }
+      document.getElementById("nextSegment").addEventListener("click", () => {
+        if (currentSegment < totalSegments) {
+          currentSegment++;
+          scrollToSegment(currentSegment);
+        }
+      });
+
+      window.allSegmentFeatures = segmentFeatures;
+
+      if (!map.getSource("pct-segments")) {
+        map.addSource("pct-segments", {
+          type: "geojson",
+          data: segmentGeoJSON,
         });
+        map.addLayer({
+          id: "pct-segments-line",
+          type: "line",
+          source: "pct-segments",
+          paint: {
+            "line-color": "#1f78b4",
+            "line-width": 4,
+            "line-dasharray": [4, 2],
+          },
+        });
+      } else {
+        map.getSource("pct-segments").setData(segmentGeoJSON);
+      }
 
-        const marker = new mapboxgl.Marker(el)
+      // Marker with image as landmark
+      segmentData.forEach((segmentInfo) => {
+        if (segmentInfo.landmarkLong && segmentInfo.landmarkLat) {
+          const el = document.createElement("div");
+          el.className = "marker";
+          el.style.width = "40px";
+          el.style.height = "40px";
+          el.style.borderRadius = "6px";
+          el.style.border = "2px solid white";
+          el.style.boxShadow = "0 0 5px rgba(0,0,0,0.5)";
+          el.style.cursor = "pointer";
+          el.title = segmentInfo.landmarks; // Tooltip på hover
+
+          // Brug billedet hvis der er ét, ellers fallback
+          if (segmentInfo.imagePath) {
+            el.style.backgroundImage = `url(${segmentInfo.imagePath})`;
+            el.style.backgroundSize = "cover";
+            el.style.backgroundPosition = "center";
+          } else {
+            el.style.backgroundColor = "#e74c3c"; // fallback rød farve
+          }
+
+          // Klik viser billedet stort
+          el.addEventListener("click", () => {
+            if (segmentInfo.imagePath) {
+              openImageModal(`${segmentInfo.imagePath}`);
+            } else {
+              alert(segmentInfo.landmarks || "No image available.");
+            }
+          });
+
+          const marker = new mapboxgl.Marker(el)
             .setLngLat([segmentInfo.landmarkLong, segmentInfo.landmarkLat])
             .addTo(map);
 
-        landmarkMarkers.push(marker);
+          landmarkMarkers.push(marker);
+        }
+      });
+
+      // Elevation
+      segmentFeatures.forEach((feature, index) => {
+        const coords = feature.geometry.coordinates;
+        const startIdx = index * segmentSize;
+        const endIdx = Math.min((index + 1) * segmentSize, totalLength - 1);
+        const originalPropsSlice = originalProperties.slice(
+          startIdx,
+          endIdx + 1
+        );
+
+        createElevationChart(
+          feature.properties.segment,
+          coords,
+          originalPropsSlice
+        );
+      });
+      segmentFeatures.forEach((feature) => {
+        updateWeatherForSegment(feature.properties.segment);
+      });
+
+      enableScrollytelling();
     }
-});
 
+    // Picture function
+    function openImageModal(imageUrl) {
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      modalImg.src = imageUrl;
+      modal.style.display = "flex";
+    }
 
-            // Elevation
-            segmentFeatures.forEach((feature, index) => {
-                const coords = feature.geometry.coordinates;
-                const startIdx = index * segmentSize;
-                const endIdx = Math.min((index + 1) * segmentSize, totalLength - 1);
-                const originalPropsSlice = originalProperties.slice(startIdx, endIdx + 1);
-        
-                createElevationChart(feature.properties.segment, coords, originalPropsSlice);
-            });
-            segmentFeatures.forEach((feature) => {
-                updateWeatherForSegment(feature.properties.segment);
-            });
+    function closeImageModal() {
+      document.getElementById("imageModal").style.display = "none";
+    }
 
-            enableScrollytelling();
-            
-        }
+    // Function to create the elevation chart
+    function createElevationChart(segmentIndex) {
+      const ctx = document
+        .getElementById(`elevationChart-${segmentIndex}`)
+        .getContext("2d");
 
-        // Picture function
-        function openImageModal(imageUrl) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modalImg.src = imageUrl;
-            modal.style.display = 'flex';
-        }
-    
-        function closeImageModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
+      if (window[`elevationChart${segmentIndex}`]) {
+        window[`elevationChart${segmentIndex}`].destroy();
+      }
 
-        // Function to create the elevation chart
-        function createElevationChart(segmentIndex) {
-            const ctx = document.getElementById(`elevationChart-${segmentIndex}`).getContext("2d");
-        
-            if (window[`elevationChart${segmentIndex}`]) {
-                window[`elevationChart${segmentIndex}`].destroy();
+      // Helper to get coords and labels
+      const getSegmentData = (indexOffset) => {
+        const seg = window.allSegmentFeatures.find(
+          (s) => s.properties.segment === segmentIndex + indexOffset
+        );
+        if (!seg) return { coords: [], labels: [] };
+
+        const coords = seg.geometry.coordinates;
+        const routeCoords = routeData.features[0].geometry.coordinates;
+        const props = routeData.features[0].properties.original_properties;
+        const startIdx = routeCoords.findIndex(
+          (c) => c[0] === coords[0][0] && c[1] === coords[0][1]
+        );
+
+        const propsSlice = props.slice(startIdx, startIdx + coords.length);
+        const labels = propsSlice.map((p) => p.Name ?? `Point`);
+        return { coords, labels };
+      };
+
+      const prev = getSegmentData(-1);
+      const curr = getSegmentData(0);
+      const next = getSegmentData(1);
+
+      const allCoords = [...prev.coords, ...curr.coords, ...next.coords];
+      const allLabels = [...prev.labels, ...curr.labels, ...next.labels];
+
+      if (!window.hikerMarker) {
+        const markerElement = document.createElement("div");
+        markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
+        markerElement.style.fontSize = "30px";
+        markerElement.style.color = "#000000";
+        markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
+        window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
+      }
+
+      // Elevation data
+      const prevData = prev.coords.map((c) => c[2] || 0);
+      const currData = curr.coords.map((c) => c[2] || 0);
+      const nextData = next.coords.map((c) => c[2] || 0);
+      const prevEnd = prev.labels.length;
+      const currEnd = prevEnd + curr.labels.length;
+
+      window[`elevationChart${segmentIndex}`] = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: allLabels,
+          datasets: [
+            {
+              label: "", // No label in legend
+              data: [
+                ...prevData,
+                ...Array(currData.length + nextData.length).fill(null),
+              ],
+              borderColor: "rgba(120,120,120,0.6)",
+              backgroundColor: "rgba(200,200,200,0.2)",
+              tension: 0.3,
+              pointRadius: 0,
+              fill: true,
+              borderWidth: 1,
+            },
+            {
+              label: "",
+              data: [
+                ...Array(prevData.length).fill(null),
+                ...currData,
+                ...Array(nextData.length).fill(null),
+              ],
+              borderColor: "#54473F",
+              backgroundColor: "rgba(84, 71, 63, 0.2)",
+              tension: 0.3,
+              pointRadius: 0,
+              fill: true,
+            },
+            {
+              label: "", // No label in legend
+              data: [
+                ...Array(prevData.length + currData.length).fill(null),
+                ...nextData,
+              ],
+              borderColor: "rgba(120,120,120,0.6)",
+              backgroundColor: "rgba(200,200,200,0.2)",
+              tension: 0.3,
+              pointRadius: 0,
+              fill: true,
+              borderWidth: 1,
+            },
+            {
+              label: "",
+              data: allCoords.map(() => null),
+              borderColor: "green",
+              pointRadius: 5,
+              showLine: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: "Mile Marker" } },
+            y: { title: { display: true, text: "Elevation (meters)" } },
+          },
+          onHover: (event, elements) => {
+            if (elements.length) {
+              const index = elements[0].index;
+              const coord = allCoords[index];
+              if (coord) {
+                window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
+              }
+
+              // Opdate "Current Position" dataset
+              const currentChart = window[`elevationChart${segmentIndex}`];
+              currentChart.data.datasets[3].data = allCoords.map((_, i) =>
+                i === index ? currData[index - prevData.length] || null : null
+              );
+              currentChart.update("none");
             }
-        
-            // Helper to get coords and labels
-            const getSegmentData = (indexOffset) => {
-                const seg = window.allSegmentFeatures.find(s => s.properties.segment === segmentIndex + indexOffset);
-                if (!seg) return { coords: [], labels: [] };
-        
-                const coords = seg.geometry.coordinates;
-                const routeCoords = routeData.features[0].geometry.coordinates;
-                const props = routeData.features[0].properties.original_properties;
-                const startIdx = routeCoords.findIndex(c =>
-                    c[0] === coords[0][0] && c[1] === coords[0][1]
-                );
-        
-                const propsSlice = props.slice(startIdx, startIdx + coords.length);
-                const labels = propsSlice.map(p => p.Name ?? `Point`);
-                return { coords, labels };
-            };
-        
-            const prev = getSegmentData(-1);
-            const curr = getSegmentData(0);
-            const next = getSegmentData(1);
-        
-            const allCoords = [...prev.coords, ...curr.coords, ...next.coords];
-            const allLabels = [...prev.labels, ...curr.labels, ...next.labels];
-        
-            if (!window.hikerMarker) {
-                const markerElement = document.createElement("div");
-                markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
-                markerElement.style.fontSize = "30px";
-                markerElement.style.color = '#000000';
-                markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
-                window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
-            }
-        
-            // Elevation data
-            const prevData = prev.coords.map(c => c[2] || 0);
-            const currData = curr.coords.map(c => c[2] || 0);
-            const nextData = next.coords.map(c => c[2] || 0);
-            const prevEnd = prev.labels.length;
-            const currEnd = prevEnd + curr.labels.length;
-        
-            window[`elevationChart${segmentIndex}`] = new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: allLabels,
-                    datasets: [
-                        {
-                            label: "", // No label in legend
-                            data: [...prevData, ...Array(currData.length + nextData.length).fill(null)],
-                            borderColor: "rgba(120,120,120,0.6)",
-                            backgroundColor: "rgba(200,200,200,0.2)",
-                            tension: 0.3,
-                            pointRadius: 0,
-                            fill: true,
-                            borderWidth: 1
-                        },
-                        {
-                            label: "",
-                            data: [
-                                ...Array(prevData.length).fill(null),
-                                ...currData,
-                                ...Array(nextData.length).fill(null)
-                            ],
-                            borderColor: "#54473F",
-                            backgroundColor: "rgba(84, 71, 63, 0.2)",
-                            tension: 0.3,
-                            pointRadius: 0,
-                            fill: true
-                        },
-                        {
-                            label: "", // No label in legend
-                            data: [...Array(prevData.length + currData.length).fill(null), ...nextData],
-                            borderColor: "rgba(120,120,120,0.6)",
-                            backgroundColor: "rgba(200,200,200,0.2)",
-                            tension: 0.3,
-                            pointRadius: 0,
-                            fill: true,
-                            borderWidth: 1
-                        },
-                        {
-                            label: "",
-                            data: allCoords.map(() => null),
-                            borderColor: "green",
-                            pointRadius: 5,
-                            showLine: false
-                        }
-                    ]
+          },
+          plugins: {
+            legend: {
+              labels: {
+                filter: function (legendItem) {
+                  return legendItem.text !== "";
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { title: { display: true, text: 'Mile Marker' } },
-                        y: { title: { display: true, text: 'Elevation (meters)' } }
-                    },
-                    onHover: (event, elements) => {
-                        if (elements.length) {
-                            const index = elements[0].index;
-                            const coord = allCoords[index];
-                            if (coord) {
-                                window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
-                            }
-            
-                            // Opdate "Current Position" dataset
-                            const currentChart = window[`elevationChart${segmentIndex}`];
-                            currentChart.data.datasets[3].data = allCoords.map((_, i) =>
-                                i === index ? currData[index - prevData.length] || null : null
-                            );
-                            currentChart.update('none');
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                filter: function (legendItem) {
-                                    return legendItem.text !== "";
-                                }
-                            }
-                        }
-                    }
-                }
-                
-            });
-            window[`elevationChart${segmentIndex}`].allCoords = [...prev.coords, ...curr.coords, ...next.coords];
-
-            
-        }
+              },
+            },
+          },
+        },
+      });
+      window[`elevationChart${segmentIndex}`].allCoords = [
+        ...prev.coords,
+        ...curr.coords,
+        ...next.coords,
+      ];
+    }
 
     // Globale arrays for the markers
-        let waterMarkers = [];
-        let shopMarkers = [];
-        let animalMarkers = [];
+    let waterMarkers = [];
+    let shopMarkers = [];
+    let animalMarkers = [];
 
-        // Function for water points
-        function toggleWaterPoints() {
-            const checkbox = document.querySelector("#toggleWater");
+    // Function for water points
+    function toggleWaterPoints() {
+      const checkbox = document.querySelector("#toggleWater");
 
-            if (checkbox.checked) {
-                waterMarkers.forEach(marker => marker.remove()); 
-                waterMarkers = [];
+      if (checkbox.checked) {
+        waterMarkers.forEach((marker) => marker.remove());
+        waterMarkers = [];
 
-                routeData.features.forEach(feature => {
-                    if (!feature.properties.original_properties || !feature.geometry.coordinates) return;
+        routeData.features.forEach((feature) => {
+          if (
+            !feature.properties.original_properties ||
+            !feature.geometry.coordinates
+          )
+            return;
 
-                    feature.properties.original_properties.forEach((prop, index) => {
-                        if (prop.Water && prop.Water !== "No") { 
-                        const el = document.createElement("div");
-                        el.innerHTML = `<span style="font-size: 24px;">💧</span>`;
+          feature.properties.original_properties.forEach((prop, index) => {
+            if (prop.Water && prop.Water !== "No") {
+              const el = document.createElement("div");
+              el.innerHTML = `<span style="font-size: 24px;">💧</span>`;
 
-                        const coord = feature.geometry.coordinates[index];
+              const coord = feature.geometry.coordinates[index];
 
-                        if (coord) {
-                            const marker = new mapboxgl.Marker({ element: el })
-                                .setLngLat([coord[0], coord[1]]) // Longitude, Latitude
-                                .setPopup(new mapboxgl.Popup().setText(`Water: ${prop.Water}`))
-                                .addTo(map);
+              if (coord) {
+                const marker = new mapboxgl.Marker({ element: el })
+                  .setLngLat([coord[0], coord[1]]) // Longitude, Latitude
+                  .setPopup(
+                    new mapboxgl.Popup().setText(`Water: ${prop.Water}`)
+                  )
+                  .addTo(map);
 
-                            waterMarkers.push(marker);
-                        }
-                    }
-                });
-            });
-
-        } else {
-            waterMarkers.forEach(marker => marker.remove());
-            waterMarkers = [];
-        }
+                waterMarkers.push(marker);
+              }
+            }
+          });
+        });
+      } else {
+        waterMarkers.forEach((marker) => marker.remove());
+        waterMarkers = [];
+      }
     }
 
-        // Function for shop points
-        function toggleShopPoints() {
-            const checkbox = document.querySelector("#toggleShops");
+    // Function for shop points
+    function toggleShopPoints() {
+      const checkbox = document.querySelector("#toggleShops");
 
-            if (checkbox.checked) {
-                shopMarkers.forEach(marker => marker.remove()); 
-                shopMarkers = [];
+      if (checkbox.checked) {
+        shopMarkers.forEach((marker) => marker.remove());
+        shopMarkers = [];
 
-                routeData.features.forEach(feature => {
-                    if (!feature.properties.original_properties || !feature.geometry.coordinates) return;
+        routeData.features.forEach((feature) => {
+          if (
+            !feature.properties.original_properties ||
+            !feature.geometry.coordinates
+          )
+            return;
 
-                    feature.properties.original_properties.forEach((prop, index) => {
-                        if (prop.Shop && prop.Shop !== "No") {
-                        const el = document.createElement("div");
-                        el.innerHTML = `<span style="font-size: 24px;">🏕️</span>`;
-                        const coord = feature.geometry.coordinates[index];
+          feature.properties.original_properties.forEach((prop, index) => {
+            if (prop.Shop && prop.Shop !== "No") {
+              const el = document.createElement("div");
+              el.innerHTML = `<span style="font-size: 24px;">🏕️</span>`;
+              const coord = feature.geometry.coordinates[index];
 
-                        if (coord) {
-                            const marker = new mapboxgl.Marker({ element: el })
-                                .setLngLat([coord[0], coord[1]])
-                                .setPopup(new mapboxgl.Popup({ closeButton: false, closeOnClick: false }).setHTML(`${prop.Shop}`));
+              if (coord) {
+                const marker = new mapboxgl.Marker({ element: el })
+                  .setLngLat([coord[0], coord[1]])
+                  .setPopup(
+                    new mapboxgl.Popup({
+                      closeButton: false,
+                      closeOnClick: false,
+                    }).setHTML(`${prop.Shop}`)
+                  );
 
-                            el.addEventListener("mouseenter", () => marker.togglePopup());
-                            el.addEventListener("mouseleave", () => marker.togglePopup());
+                el.addEventListener("mouseenter", () => marker.togglePopup());
+                el.addEventListener("mouseleave", () => marker.togglePopup());
 
-                            marker.addTo(map);
-                            shopMarkers.push(marker);
-                        }
-                    }
-                });
-            });
-
-        } else {
-            shopMarkers.forEach(marker => marker.remove());
-            shopMarkers = [];
-        }
+                marker.addTo(map);
+                shopMarkers.push(marker);
+              }
+            }
+          });
+        });
+      } else {
+        shopMarkers.forEach((marker) => marker.remove());
+        shopMarkers = [];
+      }
     }
 
-        // Function of animal points
-        function toggleAnimalPoints() {
-            const checkbox = document.querySelector("#toggleAnimals");
+    // Function of animal points
+    function toggleAnimalPoints() {
+      const checkbox = document.querySelector("#toggleAnimals");
 
-            if (checkbox.checked) {
-                animalMarkers.forEach(marker => marker.remove());
-                animalMarkers = [];
+      if (checkbox.checked) {
+        animalMarkers.forEach((marker) => marker.remove());
+        animalMarkers = [];
 
-                routeData.features.forEach(feature => {
-                    if (!feature.properties.original_properties || !feature.geometry.coordinates) return;
+        routeData.features.forEach((feature) => {
+          if (
+            !feature.properties.original_properties ||
+            !feature.geometry.coordinates
+          )
+            return;
 
-                    feature.properties.original_properties.forEach((prop, index) => {
-                        const observedAnimals = [];
+          feature.properties.original_properties.forEach((prop, index) => {
+            const observedAnimals = [];
 
-                        if (prop.Rattlesnake && prop.Rattlesnake !== "No") observedAnimals.push("Rattlesnake");
-                        if (prop.Scorpion && prop.Scorpion !== "No") observedAnimals.push("Scorpion");
-                        if (prop.Puma && prop.Puma !== "No") observedAnimals.push("Puma");
-                        if (prop.Wolf && prop.Wolf !== "No") observedAnimals.push("Wolf");
-                        if (prop.Bear && prop.Bear !== "No") observedAnimals.push("Bear");
+            if (prop.Rattlesnake && prop.Rattlesnake !== "No")
+              observedAnimals.push("Rattlesnake");
+            if (prop.Scorpion && prop.Scorpion !== "No")
+              observedAnimals.push("Scorpion");
+            if (prop.Puma && prop.Puma !== "No") observedAnimals.push("Puma");
+            if (prop.Wolf && prop.Wolf !== "No") observedAnimals.push("Wolf");
+            if (prop.Bear && prop.Bear !== "No") observedAnimals.push("Bear");
 
-                        if (observedAnimals.length > 0) {
-                            const el = document.createElement("div");
-                            el.style.width = "8px";
-                            el.style.height = "8px";
-                            el.style.backgroundColor = "rgba(0,0,0,0.2)"; // 100% gennemsigtig
-                            el.style.borderRadius = "50%";
+            if (observedAnimals.length > 0) {
+              const el = document.createElement("div");
+              el.style.width = "8px";
+              el.style.height = "8px";
+              el.style.backgroundColor = "rgba(0,0,0,0.2)"; // 100% gennemsigtig
+              el.style.borderRadius = "50%";
 
-                            const coord = feature.geometry.coordinates[index];
+              const coord = feature.geometry.coordinates[index];
 
-                            if (coord) {
-                                // Her bruger du animalDescriptions
-                                const popupText = observedAnimals.map(animal => {
-                                    const info = animalDescriptions[animal];
-                                    return `${info.emoji} <strong>${animal}</strong>: ${info.text}`;
-                                }).join("<br>");
-                        
-                                const marker = new mapboxgl.Marker({ element: el })
-                                    .setLngLat([coord[0], coord[1]])
-                                    .setPopup(new mapboxgl.Popup({ closeButton: false, closeOnClick: false }).setHTML(popupText));
-                        
-                                el.addEventListener("mouseenter", () => marker.togglePopup());
-                                el.addEventListener("mouseleave", () => marker.togglePopup());
-                        
-                                marker.addTo(map);
-                                animalMarkers.push(marker);
-                            }
-                        }
-                    });
-                });
-            } else {
-                animalMarkers.forEach(marker => marker.remove());
-                animalMarkers = [];
+              if (coord) {
+                // Her bruger du animalDescriptions
+                const popupText = observedAnimals
+                  .map((animal) => {
+                    const info = animalDescriptions[animal];
+                    return `${info.emoji} <strong>${animal}</strong>: ${info.text}`;
+                  })
+                  .join("<br>");
+
+                const marker = new mapboxgl.Marker({ element: el })
+                  .setLngLat([coord[0], coord[1]])
+                  .setPopup(
+                    new mapboxgl.Popup({
+                      closeButton: false,
+                      closeOnClick: false,
+                    }).setHTML(popupText)
+                  );
+
+                el.addEventListener("mouseenter", () => marker.togglePopup());
+                el.addEventListener("mouseleave", () => marker.togglePopup());
+
+                marker.addTo(map);
+                animalMarkers.push(marker);
+              }
             }
-        }
+          });
+        });
+      } else {
+        animalMarkers.forEach((marker) => marker.remove());
+        animalMarkers = [];
+      }
+    }
 
-        // Animal descriptions
-        const animalDescriptions = {
-            Wolf: {
-                emoji: "🐺",
-                text: "Wolves are elusive and rarely approach people. Avoid camping near fresh tracks or animal remains."
+    // Animal descriptions
+    const animalDescriptions = {
+      Wolf: {
+        emoji: "🐺",
+        text: "Wolves are elusive and rarely approach people. Avoid camping near fresh tracks or animal remains.",
+      },
+      Bear: {
+        emoji: "🐻",
+        text: "Bears are curious but rarely aggressive. Store food in a bear canister and hang it at least half a mile from camp. Avoid camping near natural food sources.",
+      },
+      Puma: {
+        emoji: "🐆",
+        text: "Pumas are solitary and active around dawn and dusk. Hike in groups at these times of day and avoid isolated campsites.",
+      },
+      Scorpion: {
+        emoji: "🦂",
+        text: "Scorpions hide under rocks and gear. Shake out boots and sleeping bags before use. When camping, check the ground carefully before setting up.",
+      },
+      Rattlesnake: {
+        emoji: "🐍",
+        text: "Rattlesnakes avoid humans but may bite if surprised. Stay on trail and check your surroundings before setting up camp. They rattle as a warning, but this may not be heard in rain.",
+      },
+    };
+
+    // Mouseover function
+    function enableMouseoverForSegments() {
+      if (!window.hikerMarker) {
+        const markerElement = document.createElement("div");
+        markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
+        markerElement.style.fontSize = "30px";
+        markerElement.style.color = "#000000";
+        markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
+
+        window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
+      }
+
+      map.on("mousemove", "pct-segments-line", function (e) {
+        if (!e.features || e.features.length === 0) return;
+
+        const segmentIndex = e.features[0].properties.segment;
+        const coordinates = e.features[0].geometry.coordinates;
+        const mouseLngLat = [e.lngLat.lng, e.lngLat.lat];
+
+        updateHikerPosition(mouseLngLat, coordinates);
+        updateElevationChartMarker(segmentIndex, mouseLngLat);
+      });
+    }
+
+    // For elevation and markers on map/elevation chart
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Jordens radius i meter
+      const φ1 = (lat1 * Math.PI) / 180;
+      const φ2 = (lat2 * Math.PI) / 180;
+      const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+      const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+      const a =
+        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    }
+
+    // Update the elevation marker function
+    function updateElevationChartMarker(segmentIndex, mouseLngLat) {
+      const chart = window[`elevationChart${segmentIndex}`];
+      if (!chart || !chart.allCoords) return;
+
+      const coords = chart.allCoords;
+      let closestIndex = 0;
+      let minDist = Infinity;
+
+      coords.forEach((coord, i) => {
+        const dist = haversineDistance(
+          coord[1],
+          coord[0],
+          mouseLngLat[1],
+          mouseLngLat[0]
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          closestIndex = i;
+        }
+      });
+
+      // Opdater markørens position i kortet
+      const coord = coords[closestIndex];
+      if (coord && window.hikerMarker) {
+        window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
+      }
+
+      // Opdater Current Position dataset i grafen (4. dataset = index 3)
+      const positionDataset = chart.data.datasets[3];
+      positionDataset.data = coords.map((_, i) =>
+        i === closestIndex ? coords[i][2] : null
+      );
+
+      chart.update("none");
+    }
+
+    // Function to extract mile markers
+    function extractMileMarkers() {
+      if (!routeData) return;
+
+      let mileMarkerFeatures = [];
+      let lineCoords = routeData.features[0].geometry.coordinates;
+      let properties = routeData.features[0].properties.original_properties;
+
+      properties.forEach((prop, index) => {
+        if (prop.Name) {
+          mileMarkerFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: lineCoords[index],
             },
-            Bear: {
-                emoji: "🐻",
-                text: "Bears are curious but rarely aggressive. Store food in a bear canister and hang it at least half a mile from camp. Avoid camping near natural food sources."
+            properties: {
+              mileMarker: prop.Name,
             },
-            Puma: {
-                emoji: "🐆",
-                text: "Pumas are solitary and active around dawn and dusk. Hike in groups at these times of day and avoid isolated campsites."
-            },
-            Scorpion: {
-                emoji: "🦂",
-                text: "Scorpions hide under rocks and gear. Shake out boots and sleeping bags before use. When camping, check the ground carefully before setting up."
-            },
-            Rattlesnake: {
-                emoji: "🐍",
-                text: "Rattlesnakes avoid humans but may bite if surprised. Stay on trail and check your surroundings before setting up camp. They rattle as a warning, but this may not be heard in rain."
-            }
-        };
-
-        // Mouseover function
-        function enableMouseoverForSegments() {
-            if (!window.hikerMarker) {
-                const markerElement = document.createElement("div");
-                markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
-                markerElement.style.fontSize = "30px";
-                markerElement.style.color = '#000000';
-                markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
-        
-                window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
-            }
-
-            map.on("mousemove", "pct-segments-line", function (e) {
-                if (!e.features || e.features.length === 0) return;
-
-                const segmentIndex = e.features[0].properties.segment;
-                const coordinates = e.features[0].geometry.coordinates;
-                const mouseLngLat = [e.lngLat.lng, e.lngLat.lat];
-
-                updateHikerPosition(mouseLngLat, coordinates);
-                updateElevationChartMarker(segmentIndex, mouseLngLat);
-            });
+          });
         }
+      });
 
-        // For elevation and markers on map/elevation chart
-        function haversineDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Jordens radius i meter
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
-        
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        
-            return R * c; 
-        }
-        
-        // Update the elevation marker function
-        function updateElevationChartMarker(segmentIndex, mouseLngLat) {
-            const chart = window[`elevationChart${segmentIndex}`];
-            if (!chart || !chart.allCoords) return;
-        
-            const coords = chart.allCoords;
-            let closestIndex = 0;
-            let minDist = Infinity;
-        
-            coords.forEach((coord, i) => {
-                const dist = haversineDistance(coord[1], coord[0], mouseLngLat[1], mouseLngLat[0]);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestIndex = i;
-                }
-            });
-        
-            // Opdater markørens position i kortet
-            const coord = coords[closestIndex];
-            if (coord && window.hikerMarker) {
-                window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
-            }
-        
-            // Opdater Current Position dataset i grafen (4. dataset = index 3)
-            const positionDataset = chart.data.datasets[3];
-            positionDataset.data = coords.map((_, i) =>
-                i === closestIndex ? coords[i][2] : null
-            );
-        
-            chart.update('none');
-        }
-        
-        
+      let mileMarkerGeoJSON = {
+        type: "FeatureCollection",
+        features: mileMarkerFeatures,
+      };
 
-        // Function to extract mile markers
-        function extractMileMarkers() {
-            if (!routeData) return;
-        
-            let mileMarkerFeatures = [];
-            let lineCoords = routeData.features[0].geometry.coordinates;
-            let properties = routeData.features[0].properties.original_properties;
-        
-            properties.forEach((prop, index) => {
-                if (prop.Name) { 
-                    mileMarkerFeatures.push({
-                        type: "Feature",
-                        geometry: {
-                            type: "Point",
-                            coordinates: lineCoords[index]
-                        },
-                        properties: {
-                            mileMarker: prop.Name
-                        }
-                    });
-                }
-            });
-        
-            let mileMarkerGeoJSON = {
-                type: "FeatureCollection",
-                features: mileMarkerFeatures
-            };
-        
-            if (!map.getSource("mile-markers")) {
-                map.addSource("mile-markers", { type: "geojson", data: mileMarkerGeoJSON });
-        
-                map.addLayer({
-                    id: "mile-markers-layer",
-                    type: "circle",
-                    source: "mile-markers",
-                    paint: {
-                        "circle-radius": 6,
-                        "circle-color": "transparent" 
-                    }
-                });
-            } else {
-                map.getSource("mile-markers").setData(mileMarkerGeoJSON);
-            }
-        }
+      if (!map.getSource("mile-markers")) {
+        map.addSource("mile-markers", {
+          type: "geojson",
+          data: mileMarkerGeoJSON,
+        });
 
-        // Function to ensure hiker marker
-        function ensureHikerMarker() {
-            if (!window.hikerMarker) {
-                const markerElement = document.createElement("div");
-                markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
-                markerElement.style.fontSize = "30px";
-                markerElement.style.color = '#000000';
-                markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
-        
-                window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
-            }
-        }
-        
-        
-        // Function to update the hiker posisition on the map
-        function updateHikerPosition(mouseLngLat) {
-            if (!map.getSource("mile-markers")) return;
-        
-            let mileMarkers = map.getSource("mile-markers")._data.features;
-        
-            let closestIndex = 0;
-            let minDist = Infinity;
-            let snapThreshold = 500; 
-        
-            mileMarkers.forEach((feature, index) => {
-                const coord = feature.geometry.coordinates;
-                const dist = haversineDistance(coord[1], coord[0], mouseLngLat[1], mouseLngLat[0]);
-        
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestIndex = index;
-                }
-            });
-        
-            const closestMileMarker = mileMarkers[closestIndex].geometry.coordinates;
-            if (minDist <= snapThreshold) {
-                window.hikerMarker.setLngLat(closestMileMarker).addTo(map);
-            }
-        }
+        map.addLayer({
+          id: "mile-markers-layer",
+          type: "circle",
+          source: "mile-markers",
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "transparent",
+          },
+        });
+      } else {
+        map.getSource("mile-markers").setData(mileMarkerGeoJSON);
+      }
+    }
 
-        // Function to reset the highlight of the elevation
-        function resetElevationHighlight() {
-            document.querySelectorAll("canvas").forEach(canvas => {
-                let ctx = canvas.getContext("2d");
-                if (!ctx) return;  // Sikrer at vi ikke forsøger at køre clearRect på et null objekt
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            });
-        
-            if (window.hikerMarker) {
-                window.hikerMarker.remove();
-            }
-        } 
+    // Function to ensure hiker marker
+    function ensureHikerMarker() {
+      if (!window.hikerMarker) {
+        const markerElement = document.createElement("div");
+        markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
+        markerElement.style.fontSize = "30px";
+        markerElement.style.color = "#000000";
+        markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
 
-        // Function to restore the main route
-        function restoreMainRoute() {
-            if (!map.getLayer('pct-line')) {
-                map.addLayer({
-                    id: 'pct-line',
-                    type: 'line',
-                    source: 'pct-route',
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': '#ff5733', 'line-width': 3 }
-                });
-            } else {
-                map.setLayoutProperty('pct-line', 'visibility', 'visible');
-                map.moveLayer('pct-line');
-            }
+        window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
+      }
+    }
+
+    // Function to update the hiker posisition on the map
+    function updateHikerPosition(mouseLngLat) {
+      if (!map.getSource("mile-markers")) return;
+
+      let mileMarkers = map.getSource("mile-markers")._data.features;
+
+      let closestIndex = 0;
+      let minDist = Infinity;
+      let snapThreshold = 500;
+
+      mileMarkers.forEach((feature, index) => {
+        const coord = feature.geometry.coordinates;
+        const dist = haversineDistance(
+          coord[1],
+          coord[0],
+          mouseLngLat[1],
+          mouseLngLat[0]
+        );
+
+        if (dist < minDist) {
+          minDist = dist;
+          closestIndex = index;
         }
-        
-        // Function to enable the scrollytelling 
-        function enableScrollytelling() {
-            const steps = document.querySelectorAll(".step[data-segment]");
-            let lastSegmentIndex = -1; 
-        
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add("active");
-        
-                        const segmentIndex = parseInt(entry.target.getAttribute("data-segment"));
-        
-                        if (segmentIndex !== lastSegmentIndex) {
-                            highlightSegment(segmentIndex);
-                            focusOnSegment(segmentIndex);
-                            lastSegmentIndex = segmentIndex;
-                        }
-                    }
-                });
-            }, { threshold: 0.6 });
-        
-            steps.forEach(step => observer.observe(step));
-        }
-            setTimeout(() => {
-                let firstSegment = document.querySelector(`.step[data-segment='${window.routeDirection === -1 ? steps.length : 1}']`);
-                if (firstSegment) firstSegment.scrollIntoView({ behavior: "smooth" });
-            }, 500);
+      });
 
-        // Highlight segments function
-        function highlightSegment(segmentIndex) {
-            if (!map.getSource('pct-segments')) return;
-              
-              map.setPaintProperty('pct-segments-line', 'line-color', [
-                  'match',
-                  ['get', 'segment'],
-                  segmentIndex, '#ff5733', 
-                  '#1f78b4' 
-              ]);
-          } 
+      const closestMileMarker = mileMarkers[closestIndex].geometry.coordinates;
+      if (minDist <= snapThreshold) {
+        window.hikerMarker.setLngLat(closestMileMarker).addTo(map);
+      }
+    }
 
-        // Focus on segments function 
-        function focusOnSegment(segmentIndex) {
-            if (!segmentGeoJSON) return;
-                
-            const segmentFeature = segmentGeoJSON.features.find(f => f.properties.segment === segmentIndex);
-            if (!segmentFeature) return;
-    
-                const coordinates = segmentFeature.geometry.coordinates;
-                if (!coordinates.length) return;
-    
-                const midPoint = coordinates[Math.floor(coordinates.length / 2)];
-    
-                map.flyTo({ 
-                    center: midPoint, 
-                    zoom: 10, 
-                    speed: 1.5, 
-                    pitch: 70 
-                });
+    // Function to reset the highlight of the elevation
+    function resetElevationHighlight() {
+      document.querySelectorAll("canvas").forEach((canvas) => {
+        let ctx = canvas.getContext("2d");
+        if (!ctx) return; // Sikrer at vi ikke forsøger at køre clearRect på et null objekt
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      });
+
+      if (window.hikerMarker) {
+        window.hikerMarker.remove();
+      }
+    }
+
+    // Function to restore the main route
+    function restoreMainRoute() {
+      if (!map.getLayer("pct-line")) {
+        map.addLayer({
+          id: "pct-line",
+          type: "line",
+          source: "pct-route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#ff5733", "line-width": 3 },
+        });
+      } else {
+        map.setLayoutProperty("pct-line", "visibility", "visible");
+        map.moveLayer("pct-line");
+      }
+    }
+
+    // Function to enable the scrollytelling
+    function enableScrollytelling() {
+      const steps = document.querySelectorAll(".step[data-segment]");
+      let lastSegmentIndex = -1;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("active");
+
+              const segmentIndex = parseInt(
+                entry.target.getAttribute("data-segment")
+              );
+
+              if (segmentIndex !== lastSegmentIndex) {
                 highlightSegment(segmentIndex);
+                focusOnSegment(segmentIndex);
+                lastSegmentIndex = segmentIndex;
+              }
             }
+          });
+        },
+        { threshold: 0.6 }
+      );
 
-        // Aktiver funktionen
-        map.on('load', function () {
-            enableMouseoverForSegments();
-        });       
+      steps.forEach((step) => observer.observe(step));
+    }
+    setTimeout(() => {
+      let firstSegment = document.querySelector(
+        `.step[data-segment='${
+          window.routeDirection === -1 ? steps.length : 1
+        }']`
+      );
+      if (firstSegment) firstSegment.scrollIntoView({ behavior: "smooth" });
+    }, 500);
 
-        // Update pitch bearing function
-        function updatePitchBearing() {
-            const pitchSlider = document.getElementById("pitchRange");
-            const rotationSlider = document.getElementById("rotationRange");
-            const pitch = parseInt(pitchSlider.value, 10);
-            const bearing = parseInt(rotationSlider.value, 10);
-        
-            document.getElementById('pitchValue').innerText = pitch + "°";
-            document.getElementById('rotationValue').innerText = bearing + "°";
-        
-            map.easeTo({
-                pitch: pitch,
-                bearing: bearing,
-                duration: 500
-            });
-        }
+    // Highlight segments function
+    function highlightSegment(segmentIndex) {
+      if (!map.getSource("pct-segments")) return;
 
-        // Exaggeration function
-        function updateExaggeration() {
-            const exaggerationSlider = document.getElementById("exaggerationRange");
-            const exaggeration = parseFloat(exaggerationSlider.value);
-        
-            document.getElementById('exaggerationValue').innerText = exaggeration.toFixed(1);
-        
-            map.setTerrain({
-                source: 'terrain-dem',
-                exaggeration: exaggeration
-            });
-        }
+      map.setPaintProperty("pct-segments-line", "line-color", [
+        "match",
+        ["get", "segment"],
+        segmentIndex,
+        "#ff5733",
+        "#1f78b4",
+      ]);
+    }
 
-        // Last day of month function (weather)
-        function getLastDayOfMonth(year, month) {
-            return new Date(year, month, 0).getDate();
-        }
-        
-        // Historical weather function
-        async function fetchHistoricalWeather(lat, lon, month) {
-            const year = 2023; 
-            const start_date = `${year}-${month}-01`;
-            const end_date = `${year}-${month}-${getLastDayOfMonth(year, month)}`;
-            
-            const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start_date}&end_date=${end_date}&hourly=temperature_2m&timezone=auto`;
-           
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        
-                const data = await response.json();
-                if (!data.hourly) throw new Error("No hourly weather data available.");
-        
-                return data;
-            } catch (error) {
-                console.error("Fejl ved hentning af vejrdata:", error);
-                return null;
-            }
-        }
+    // Focus on segments function
+    function focusOnSegment(segmentIndex) {
+      if (!segmentGeoJSON) return;
 
-        
-        // Update weather for the segments function
-        async function updateWeatherForSegment(segmentIndex) {
-            if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
-        
-            const segment = segmentGeoJSON.features[segmentIndex];
-            if (!segment.geometry || !segment.geometry.coordinates.length) return;
-        
-            const midpoint = segment.geometry.coordinates[Math.floor(segment.geometry.coordinates.length / 2)];
-            const lat = Number(midpoint[1].toFixed(5));
-            const lon = Number(midpoint[0].toFixed(5));
-        
-            const monthSelect = document.getElementById(`weatherMonth-${segmentIndex}`);
-            if (!monthSelect) {
-                console.error(`Dropdown weatherMonth-${segmentIndex} not found`);
-                return;
-            }
-            const month = monthSelect.value;
-        
-            const weatherData = await fetchHistoricalWeather(lat, lon, month);
-        
-            if (weatherData) {
-                const weather = calculateDayNightMinMax(weatherData);
-        
-                document.getElementById(`weather-chart-container-${segmentIndex}`).innerHTML = `
+      const segmentFeature = segmentGeoJSON.features.find(
+        (f) => f.properties.segment === segmentIndex
+      );
+      if (!segmentFeature) return;
+
+      const coordinates = segmentFeature.geometry.coordinates;
+      if (!coordinates.length) return;
+
+      const midPoint = coordinates[Math.floor(coordinates.length / 2)];
+
+      map.flyTo({
+        center: midPoint,
+        zoom: 10,
+        speed: 1.5,
+        pitch: 70,
+      });
+      highlightSegment(segmentIndex);
+    }
+
+    // Aktiver funktionen
+    map.on("load", function () {
+      enableMouseoverForSegments();
+    });
+
+    // Update pitch bearing function
+    function updatePitchBearing() {
+      const pitchSlider = document.getElementById("pitchRange");
+      const rotationSlider = document.getElementById("rotationRange");
+      const pitch = parseInt(pitchSlider.value, 10);
+      const bearing = parseInt(rotationSlider.value, 10);
+
+      document.getElementById("pitchValue").innerText = pitch + "°";
+      document.getElementById("rotationValue").innerText = bearing + "°";
+
+      map.easeTo({
+        pitch: pitch,
+        bearing: bearing,
+        duration: 500,
+      });
+    }
+
+    // Exaggeration function
+    function updateExaggeration() {
+      const exaggerationSlider = document.getElementById("exaggerationRange");
+      const exaggeration = parseFloat(exaggerationSlider.value);
+
+      document.getElementById("exaggerationValue").innerText =
+        exaggeration.toFixed(1);
+
+      map.setTerrain({
+        source: "terrain-dem",
+        exaggeration: exaggeration,
+      });
+    }
+
+    // Last day of month function (weather)
+    function getLastDayOfMonth(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    // Historical weather function
+    async function fetchHistoricalWeather(lat, lon, month) {
+      const year = 2023;
+      const start_date = `${year}-${month}-01`;
+      const end_date = `${year}-${month}-${getLastDayOfMonth(year, month)}`;
+
+      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start_date}&end_date=${end_date}&hourly=temperature_2m&timezone=auto`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+        const data = await response.json();
+        if (!data.hourly) throw new Error("No hourly weather data available.");
+
+        return data;
+      } catch (error) {
+        console.error("Fejl ved hentning af vejrdata:", error);
+        return null;
+      }
+    }
+
+    // Update weather for the segments function
+    async function updateWeatherForSegment(segmentIndex) {
+      if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
+
+      const segment = segmentGeoJSON.features[segmentIndex];
+      if (!segment.geometry || !segment.geometry.coordinates.length) return;
+
+      const midpoint =
+        segment.geometry.coordinates[
+          Math.floor(segment.geometry.coordinates.length / 2)
+        ];
+      const lat = Number(midpoint[1].toFixed(5));
+      const lon = Number(midpoint[0].toFixed(5));
+
+      const monthSelect = document.getElementById(
+        `weatherMonth-${segmentIndex}`
+      );
+      if (!monthSelect) {
+        console.error(`Dropdown weatherMonth-${segmentIndex} not found`);
+        return;
+      }
+      const month = monthSelect.value;
+
+      const weatherData = await fetchHistoricalWeather(lat, lon, month);
+
+      if (weatherData) {
+        const weather = calculateDayNightMinMax(weatherData);
+
+        document.getElementById(
+          `weather-chart-container-${segmentIndex}`
+        ).innerHTML = `
                     <p style="font-size: 12px">
                         <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i> 
                         ${weather.day.min}°C / ${weather.day.max}°C<br> 
@@ -1679,179 +2317,186 @@ segmentData.forEach(segmentInfo => {
                         ${weather.night.min}°C / ${weather.night.max}°C
                     </p>
                 `;
-            }
-        }
-        function calculateDayNightMinMax(weatherData) {
-            if (!weatherData || !weatherData.hourly || !weatherData.hourly.temperature_2m) {
-                console.error("Manglende vejrdata.");
-                return null;
-            }
-        
-            const times = weatherData.hourly.time;
-            const temperatures = weatherData.hourly.temperature_2m;
-        
-            let dayTemps = [];
-            let nightTemps = [];
-        
-            for (let i = 0; i < times.length; i++) {
-                const hour = parseInt(times[i].split("T")[1].split(":")[0]);
-        
-                if (hour >= 6 && hour < 18) {
-                    dayTemps.push(temperatures[i]);
-                } else {
-                    nightTemps.push(temperatures[i]);
-                }
-            }
-        
-            const getMinMax = (temps) => {
-                if (!temps.length) return { min: "N/A", max: "N/A" };
-                return {
-                    min: Math.min(...temps).toFixed(1),
-                    max: Math.max(...temps).toFixed(1)
-                };
-            };
-        
-            return {
-                day: getMinMax(dayTemps),
-                night: getMinMax(nightTemps)
-            };
-        }
-        function scrollToSegment(index) {
-            const segment = document.querySelector(`.step[data-segment='${index}']`);
-            if (segment) {
-                segment.scrollIntoView({ behavior: "smooth" });
-        
-                document.getElementById("prevSegment").style.display = (index <= 1) ? "none" : "inline-block";
-                document.getElementById("nextSegment").style.display = (index >= totalSegments) ? "none" : "inline-block";
-            }
-        }
-        
-        
-        
-        function createFullTrailElevationChart() {
-            if (!routeData || !routeData.features.length) return;
-        
-            const coordinates = routeData.features[0].geometry.coordinates;
-            const props = routeData.features[0].properties.original_properties;
-        
-            const elevations = coordinates.map(coord => coord[2] || 0);
-            const labels = props.map(p => p.Name || "");
-        
-            const ctx = document.getElementById("fullTrailElevationChart").getContext("2d");
-        
-            // Hiker
-            if (!window.hikerMarker) {
-                const markerElement = document.createElement("div");
-                markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
-                markerElement.style.fontSize = "30px";
-                markerElement.style.color = '#000000';
-                markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
-                window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
-            }
-        
-            // Gem koordinater til senere brug i map→chart hover
-            window.fullTrailCoords = coordinates;
-        
-            // Chart
-            window.fullChart = new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: "Elevation",
-                            data: elevations,
-                            borderColor: "#54473F",
-                            backgroundColor: "rgba(150, 150, 150, 0.2)",
-                            borderWidth: 1,
-                            tension: 0.3,
-                            pointRadius: 0,
-                            fill: true
-                        },
-                        {
-                            label: "",
-                            data: elevations.map(() => null),
-                            borderColor: "green",
-                            pointBackgroundColor: "transparent",
-                            borderWidth: 2,
-                            pointRadius: 5,
-                            showLine: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: "Mile Marker"
-                            },
-                            ticks: {
-                                maxTicksLimit: 20
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: "Elevation (m)"
-                            }
-                        }
-                    },
-                    onHover: function (event, elements) {
-                        if (elements.length) {
-                            const index = elements[0].index;
-                            const coord = coordinates[index];
-                            if (coord) {
-                                window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
-                            }
-        
-                            // Highlight punkt i grafen
-                            window.fullChart.data.datasets[1].data = coordinates.map((_, i) =>
-                                i === index ? elevations[i] : null
-                            );
-                            window.fullChart.update("none");
-                        }
-                    }
-                }
-            });
-        }
-        map.on("mousemove", "pct-line", function (e) {
-            if (!window.fullChart || !window.fullTrailCoords) return;
-        
-            const mouse = e.lngLat;
-            const coords = window.fullTrailCoords;
-        
-            let closestIndex = 0;
-            let minDist = Infinity;
-        
-            coords.forEach((coord, i) => {
-                const dist = haversineDistance(coord[1], coord[0], mouse.lat, mouse.lng);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestIndex = i;
-                }
-            });
-        
-            const elevation = coords[closestIndex][2] || 0;
-        
-            window.hikerMarker.setLngLat([coords[closestIndex][0], coords[closestIndex][1]]).addTo(map);
-        
-            window.fullChart.data.datasets[1].data = coords.map((_, i) =>
-                i === closestIndex ? elevation : null
-            );
-            window.fullChart.update("none");
-        });
-        
-        
-        
- 
-        
-     
+      }
+    }
+    function calculateDayNightMinMax(weatherData) {
+      if (
+        !weatherData ||
+        !weatherData.hourly ||
+        !weatherData.hourly.temperature_2m
+      ) {
+        console.error("Manglende vejrdata.");
+        return null;
+      }
 
-    </script>
+      const times = weatherData.hourly.time;
+      const temperatures = weatherData.hourly.temperature_2m;
+
+      let dayTemps = [];
+      let nightTemps = [];
+
+      for (let i = 0; i < times.length; i++) {
+        const hour = parseInt(times[i].split("T")[1].split(":")[0]);
+
+        if (hour >= 6 && hour < 18) {
+          dayTemps.push(temperatures[i]);
+        } else {
+          nightTemps.push(temperatures[i]);
+        }
+      }
+
+      const getMinMax = (temps) => {
+        if (!temps.length) return { min: "N/A", max: "N/A" };
+        return {
+          min: Math.min(...temps).toFixed(1),
+          max: Math.max(...temps).toFixed(1),
+        };
+      };
+
+      return {
+        day: getMinMax(dayTemps),
+        night: getMinMax(nightTemps),
+      };
+    }
+    function scrollToSegment(index) {
+      const segment = document.querySelector(`.step[data-segment='${index}']`);
+      if (segment) {
+        segment.scrollIntoView({ behavior: "smooth" });
+
+        document.getElementById("prevSegment").style.display =
+          index <= 1 ? "none" : "inline-block";
+        document.getElementById("nextSegment").style.display =
+          index >= totalSegments ? "none" : "inline-block";
+      }
+    }
+
+    function createFullTrailElevationChart() {
+      if (!routeData || !routeData.features.length) return;
+
+      const coordinates = routeData.features[0].geometry.coordinates;
+      const props = routeData.features[0].properties.original_properties;
+
+      const elevations = coordinates.map((coord) => coord[2] || 0);
+      const labels = props.map((p) => p.Name || "");
+
+      const ctx = document
+        .getElementById("fullTrailElevationChart")
+        .getContext("2d");
+
+      // Hiker
+      if (!window.hikerMarker) {
+        const markerElement = document.createElement("div");
+        markerElement.innerHTML = `<i class="fa-solid fa-person-hiking"></i>`;
+        markerElement.style.fontSize = "30px";
+        markerElement.style.color = "#000000";
+        markerElement.style.textShadow = "1px 1px 3px rgba(0,0,0,0.5)";
+        window.hikerMarker = new mapboxgl.Marker({ element: markerElement });
+      }
+
+      // Gem koordinater til senere brug i map→chart hover
+      window.fullTrailCoords = coordinates;
+
+      // Chart
+      window.fullChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Elevation",
+              data: elevations,
+              borderColor: "#54473F",
+              backgroundColor: "rgba(150, 150, 150, 0.2)",
+              borderWidth: 1,
+              tension: 0.3,
+              pointRadius: 0,
+              fill: true,
+            },
+            {
+              label: "",
+              data: elevations.map(() => null),
+              borderColor: "green",
+              pointBackgroundColor: "transparent",
+              borderWidth: 2,
+              pointRadius: 5,
+              showLine: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: "Mile Marker",
+              },
+              ticks: {
+                maxTicksLimit: 20,
+              },
+            },
+            y: {
+              title: {
+                display: true,
+                text: "Elevation (m)",
+              },
+            },
+          },
+          onHover: function (event, elements) {
+            if (elements.length) {
+              const index = elements[0].index;
+              const coord = coordinates[index];
+              if (coord) {
+                window.hikerMarker.setLngLat([coord[0], coord[1]]).addTo(map);
+              }
+
+              // Highlight punkt i grafen
+              window.fullChart.data.datasets[1].data = coordinates.map((_, i) =>
+                i === index ? elevations[i] : null
+              );
+              window.fullChart.update("none");
+            }
+          },
+        },
+      });
+    }
+    map.on("mousemove", "pct-line", function (e) {
+      if (!window.fullChart || !window.fullTrailCoords) return;
+
+      const mouse = e.lngLat;
+      const coords = window.fullTrailCoords;
+
+      let closestIndex = 0;
+      let minDist = Infinity;
+
+      coords.forEach((coord, i) => {
+        const dist = haversineDistance(
+          coord[1],
+          coord[0],
+          mouse.lat,
+          mouse.lng
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          closestIndex = i;
+        }
+      });
+
+      const elevation = coords[closestIndex][2] || 0;
+
+      window.hikerMarker
+        .setLngLat([coords[closestIndex][0], coords[closestIndex][1]])
+        .addTo(map);
+
+      window.fullChart.data.datasets[1].data = coords.map((_, i) =>
+        i === closestIndex ? elevation : null
+      );
+      window.fullChart.update("none");
+    });
+  </script>
+</html>
