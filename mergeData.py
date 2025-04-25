@@ -4,6 +4,8 @@ file_numbers = [20, 25, 30, 35, 40, 45]
 
 filename_default = "Segmented_PCT_NUMBER_Segments.csv"
 
+spareDescriptions = True
+
 def merge_file(filename):
 
     # Load the files
@@ -43,16 +45,21 @@ def merge_file(filename):
 
     for mergingindex, mergingrow in pct_30.iterrows():
         description = mergingrow["Description"]
-        pct_30.at[mergingindex, 'Description_new'] = mergingrow["Description"]
+        if spareDescriptions is False:
+            pct_30.at[mergingindex, 'Description_new'] = mergingrow["Description"]
 
         photo = None
+        photo_description = None
         for biggerindex, biggerrow in pct_50.iterrows():
             if biggerrow["Description"] in description:
-                pct_30.at[mergingindex, 'Description_new'] = pct_30.at[mergingindex, 'Description_new'].replace(biggerrow["Description"], biggerrow["Description_new"]).replace(",", ";")
-                pct_30.at[mergingindex, 'Description'] = pct_30.at[mergingindex, 'Description'].replace(",", ";")
+                if spareDescriptions is False:
+                    pct_30.at[mergingindex, 'Description_new'] = pct_30.at[mergingindex, 'Description_new'].replace(biggerrow["Description"], biggerrow["Description_new"]).replace(",", ";")
+                    pct_30.at[mergingindex, 'Description'] = pct_30.at[mergingindex, 'Description'].replace(",", ";")
                 if photo is None:
                     photo = biggerrow["imagesPath"]
+                    photo_description = biggerrow["Landmarks"]
                 pct_30.at[mergingindex, 'imagesPath'] = photo
+                pct_30.at[mergingindex, 'Landmarks'] = photo_description
 
     try:
         pct_30 = pct_30.drop('index', axis=1)

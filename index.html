@@ -19,13 +19,15 @@
         margin: 0;
         padding: 0;
         font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        width: 100vw;
+        height: 100vh;
         display: grid;
         grid-template-columns: 50% 50%;
       }
 
       #map-container {
-        width: 50vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         position: relative;
       }
       #map {
@@ -45,8 +47,8 @@
       }
 
       #scrollytelling-container {
-        width: 50vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         overflow-y: auto;
         padding: 0;
         display: flex;
@@ -66,7 +68,7 @@
         box-sizing: border-box;
       }
       #segments-container .step {
-        min-height: 100vh;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -113,8 +115,8 @@
       }
 
       #calculate-section {
-        width: 50vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         padding: 0;
         overflow-y: auto;
         display: flex;
@@ -146,7 +148,7 @@
 
       .step {
         height: 10;
-        min-width: 93vh;
+        min-width: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -157,7 +159,7 @@
         padding: 10px;
         text-align: center;
         font-size: 18px;
-        min-height: 100vh;
+        min-height: 100%;
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.6s ease-out, transform 0.6s ease-out;
@@ -171,7 +173,7 @@
 
       .slider-container {
         width: 100%;
-        max-width: 400px;
+        max-width: 80%;
         margin: 5px auto;
         display: flex;
         align-items: center;
@@ -266,6 +268,7 @@
         align-items: flex-start;
         justify-content: space-between;
         margin-bottom: 10px;
+        width: 90%;
       }
       .description-text {
         flex: 1;
@@ -474,7 +477,7 @@
           </p>
           <p
             style="
-              max-width: 900px;
+              max-width: 100%;
               margin: 0 auto;
               text-align: center;
               margin-top: 5px;
@@ -929,7 +932,7 @@
             })
           );
 
-          console.log(obj);
+          console.log(obj, obj["Landmarks"]);
 
           return {
             segmentNumber: parseInt(obj["Segment Number"].trim()),
@@ -1412,6 +1415,8 @@
             animalHTML += `${info.emoji} <strong>${animal}:</strong> ${info.text}<br>`;
           });
         }
+
+        console.log(segmentInfo);
 
         // Where we change the information from the CSV-files onto the scrollytelling
         scrollytellingContent += `
