@@ -19,7 +19,8 @@
         margin: 0;
         padding: 0;
         font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
-        display: flex;
+        display: grid;
+        grid-template-columns: 50% 50%;
       }
 
       #map-container {
@@ -942,8 +943,8 @@
             landmarkLat: parseFloat(obj["Landmark lat"].trim()),
             description:
               obj["Description_new"] != null
-                ? obj["Description_new"].trim()
-                : obj["Description"].trim(),
+                ? obj["Description_new"].trim().replaceAll(";", ",")
+                : obj["Description"].trim().replaceAll(";", ","),
             distanceKm: parseFloat(obj["Distance (km)"].trim()),
             part: obj["Part"].trim(),
             imagePath: obj["imagesPath"].trim(),
@@ -1472,7 +1473,7 @@
                                 <strong>Temperature min/max</strong><br>
                                 <div id="weather-chart-container-${segmentIndex}" style="margin-bottom: 8px;"></div>
                                 <label for="weatherMonth-${segmentIndex}" style="font-size: 12px;">Choose month:</label>
-                                <select id="weatherMonth-${segmentIndex}" style="font-size: 12px; margin-bottom: 5px;">
+                                <select id="weatherMonth-${segmentIndex}" style="font-size: 12px; margin-bottom: 5px;" onchange="updateWeatherForSegment(${segmentIndex})">
                                     ${[...Array(12)]
                                       .map(
                                         (_, m) =>
@@ -1487,7 +1488,6 @@
                                       )
                                       .join("")}
                                 </select><br>
-                                <button onclick="updateWeatherForSegment(${segmentIndex})" style="font-size: 12px;">Show Weather</button>
                             </div>
 
 
