@@ -15,6 +15,9 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 0;
@@ -57,7 +60,6 @@
         text-align: left;
         border-radius: 0px;
         margin: 0;
-        box-sizing: border-box;
       }
       #segments-container {
         flex: 1;
@@ -66,8 +68,8 @@
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        box-sizing: border-box;
       }
+
       #segments-container .step {
         min-height: 100%;
         height: 100%;
@@ -150,8 +152,7 @@
       }
 
       .step {
-        height: 10;
-        min-width: 100%;
+        width: 100%;
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -161,7 +162,6 @@
         padding: 10px;
         text-align: center;
         font-size: 18px;
-        min-height: 100%;
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.6s ease-out, transform 0.6s ease-out;
@@ -226,14 +226,19 @@
         display: flex;
         justify-content: center;
       }
+      .chart-container.overview {
+        height: 80px;
+        position: relative;
+      }
       p.chart-info-line {
         margin-top: 0px;
         margin-bottom: 5px;
-        font-size: 12px;
+        font-size: 14px;
       }
       #welcome-section {
         display: grid;
         height: 100%;
+        width: 100%;
       }
       #welcome-section h3 {
         margin-top: 0;
@@ -280,14 +285,14 @@
       }
       .description-text {
         flex: 1;
-        font-size: 14px;
+        font-size: 16px;
         line-height: 1.5;
       }
       .thumbnail-wrapper {
         flex-shrink: 0;
       }
       .thumbnail {
-        width: 120px;
+        width: 200px;
         height: auto;
         cursor: pointer;
         border: 1px solid #ccc;
@@ -318,7 +323,7 @@
         height: 120px;
         text-align: center;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
-        font-size: 12px;
+        font-size: 14px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -433,14 +438,14 @@
           Dangerous animals
         </label>
         <div style="margin-top: 10px">
-          <label for="pitchRange">Pitch: <span id="pitchValue">60°</span></label
+          <label for="pitchRange">Pitch: <span id="pitchValue">40°</span></label
           ><br />
           <input
             type="range"
             id="pitchRange"
             min="0"
             max="85"
-            value="60"
+            value="40"
             oninput="updatePitchBearing()"
           />
           <br />
@@ -458,7 +463,7 @@
           <br />
           <label for="exaggerationRange"
             >Terrain Exaggeration:
-            <span id="exaggerationValue">5.0</span>x</label
+            <span id="exaggerationValue">3.0</span>x</label
           ><br />
           <input
             type="range"
@@ -466,7 +471,7 @@
             min="0"
             max="10"
             step="0.1"
-            value="5"
+            value="3"
             oninput="updateExaggeration()"
           />
         </div>
@@ -496,7 +501,7 @@
               margin: 0 auto;
               text-align: center;
               margin-top: 5px;
-              font-size: 15px;
+              font-size: 17px;
             "
           >
             The trail will be shown in segments, similar to this page. Here you
@@ -581,7 +586,7 @@
           >
             On the next page we’ll ask about your running and hiking pace. Use
             the slider to find our pace or enter it manually. It will then give
-            you an estimated time to complete the trail
+            you an estimated time to complete the trail.
           </p>
 
           <div style="text-align: center; margin-top: 20px">
@@ -592,6 +597,11 @@
         <!-- Landing page 2 -->
         <div id="calculation-section" style="display: none">
           <div id="step-1" class="calc-step active">
+            <div
+              class="chart-container"
+              id="overviewChart"
+              style="height: 180px"
+            ></div>
             <p style="margin-bottom: 5px">
               Please choose your preferred category or manually enter your paces
               below <br />
@@ -621,7 +631,7 @@
             <!-- Category Description -->
             <p
               id="category-description"
-              style="margin-top: 15px; font-size: 14px; color: #444"
+              style="margin-top: 15px; font-size: 16px; color: #444"
             ></p>
 
             <br />
@@ -663,7 +673,7 @@
             <br /><br />
 
             <!-- Direction Selection -->
-            <p>Which direction do you plan to hike?</p>
+            <!--     <p>Which direction do you plan to hike?</p>
             <label
               ><input type="radio" name="routeDirection" value="1" checked />
               South to North</label
@@ -674,7 +684,7 @@
             >
 
             <br /><br />
-
+ -->
             <!-- Calculate button-->
             <!--  <button onclick="calculateCategory()" id="buttons">
               Calculate time
@@ -1009,8 +1019,6 @@
             })
           );
 
-          console.log(obj, obj["Landmarks"]);
-
           return {
             segmentNumber: parseInt(obj["Segment Number"].trim()),
             startLongitude: parseFloat(obj["Start Longitude"].trim()),
@@ -1115,7 +1123,9 @@
       }
 
       window.routeDirection = parseInt(
-        document.querySelector('input[name="routeDirection"]:checked').value,
+        document.querySelector('input[name="routeDirection"]:checked') != null
+          ? document.querySelector('input[name="routeDirection"]:checked').value
+          : "1",
         10
       );
 
@@ -1181,6 +1191,9 @@
       ).innerText = `Estimated time to complete the trail: ${formattedTime}`;
 
       window.selectedSegments = segments;
+      if (window.fullChart != null) {
+        window.fullChart.update();
+      }
     }
 
     // New function to begin the trail
@@ -1195,6 +1208,7 @@
 
     // Function of the calculation
     function showCalculation() {
+      const chart = document.getElementById("fullTrailElevationChart");
       const welcomeSection = document.getElementById("welcome-section");
       welcomeSection.style.opacity = 1;
       welcomeSection.style.transition = "opacity 0.5s ease";
@@ -1203,6 +1217,7 @@
       setTimeout(() => {
         welcomeSection.style.display = "none";
         document.getElementById("calculation-section").style.display = "block";
+        document.getElementById("overviewChart").appendChild(chart);
 
         const firstStep = document.getElementById("step-1");
         firstStep.style.display = "block";
@@ -1375,7 +1390,6 @@
       if (!routeData) return;
 
       const segmentData = await loadCSVData();
-      console.log("segmentData", segmentData);
 
       const numSegments = window.selectedSegments || 30;
       let lineCoordinates = [...routeData.features[0].geometry.coordinates];
@@ -1404,7 +1418,6 @@
         let segmentInfo = segmentData.find(
           (s) => s.segmentNumber === segmentIndex
         );
-        console.log("Image path for segment", segmentIndex, ":", segmentInfo);
 
         segmentFeatures.push({
           type: "Feature",
@@ -1498,8 +1511,6 @@
           });
         }
 
-        console.log(segmentInfo);
-
         // Where we change the information from the CSV-files onto the scrollytelling
         scrollytellingContent += `
                      <div class="step" data-segment="${segmentIndex}" data-order="${
@@ -1516,7 +1527,10 @@
                               <canvas id="elevationChart-${segmentIndex}"></canvas>
                           </div>
 
-                          <p style="font-size: 12px; " class="chart-info-line" >
+                          <div class="chart-container overview" id="overview-chart-container-${segmentIndex}">
+                          </div>
+
+                          <p style="font-size: 14px; " class="chart-info-line" >
                               📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(
                                 1
                               )} km |
@@ -1658,6 +1672,32 @@
       segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
       currentSegment = window.routeDirection === -1 ? window.totalSegments : 1;
 
+      if (window.fullChart != null) {
+        document
+          .getElementById(`overview-chart-container-${currentSegment}`)
+          .appendChild(window.fullChart.canvas);
+
+        window.fullChart.options.scales.y.title.text = "Elevation";
+        window.fullChart.options.scales.x.title.text = "Segment";
+
+        window.fullChart.options.scales.x = {
+          display: true,
+          ticks: {
+            // Include a dollar sign in the ticks
+            callback: function (value, index, ticks) {
+              return Math.floor(
+                value /
+                  (routeData.features[0].geometry.coordinates.length /
+                    window.selectedSegments)
+              );
+            },
+          },
+        };
+
+        window.fullChart.resize();
+        window.fullChart.update();
+      }
+
       document.getElementById("nextSegment").addEventListener("click", () => {
         if (
           window.routeDirection === 1 &&
@@ -1785,7 +1825,7 @@
         window[`elevationChart${segmentIndex}`].destroy();
       }
 
-      var gradient = ctx.createLinearGradient(0, 0, 1000, 0);
+      var gradient = ctx.createLinearGradient(0, 0, 400, 0);
       gradient.addColorStop(0, "#fc9272");
       gradient.addColorStop(0.16, "#fb6a4a");
       gradient.addColorStop(0.32, "#ef3b2c");
@@ -1874,8 +1914,8 @@
                 ...currData,
                 ...Array(nextData.length).fill(null),
               ],
-              borderColor: "#54473F",
-              // borderColor: gradient,
+              //borderColor: "#54473F",
+              borderColor: gradient,
               backgroundColor: "rgba(84, 71, 63, 0.2)",
               tension: 0.3,
               pointRadius: 0,
@@ -1923,7 +1963,7 @@
               currentChart.data.datasets[3].data = allCoords.map((_, i) =>
                 i === index ? currData[index - prevData.length] || null : null
               );
-              currentChart.update("none");
+              currentChart.update();
             }
           },
           plugins: {
@@ -2202,7 +2242,7 @@
         i === closestIndex ? coords[i][2] : null
       );
 
-      chart.update("none");
+      chart.update();
     }
 
     // Function to extract mile markers
@@ -2344,6 +2384,15 @@
                 entry.target.getAttribute("data-segment")
               );
 
+              window.currentSegment = segmentIndex;
+              if (window.fullChart != null) {
+                document
+                  .getElementById(`overview-chart-container-${segmentIndex}`)
+                  .appendChild(window.fullChart.canvas);
+
+                window.fullChart.update();
+              }
+
               if (segmentIndex !== lastSegmentIndex) {
                 currentSegment = segmentIndex;
                 highlightSegment(segmentIndex);
@@ -2402,8 +2451,8 @@
       map.flyTo({
         center: midPoint,
         zoom: 10,
-        speed: 0.8,
-        pitch: 70,
+        speed: 0.5,
+        pitch: window.pitch ?? 40,
       });
       highlightSegment(segmentIndex);
     }
@@ -2419,6 +2468,8 @@
       const rotationSlider = document.getElementById("rotationRange");
       const pitch = parseInt(pitchSlider.value, 10);
       const bearing = parseInt(rotationSlider.value, 10);
+
+      window.pitch = pitch;
 
       document.getElementById("pitchValue").innerText = pitch + "°";
       document.getElementById("rotationValue").innerText = bearing + "°";
@@ -2587,8 +2638,18 @@
         );
       }
 
+      window.currentSegment = index;
+
       console.log("scrollToSegment index:", index);
       console.log("window.routeDirection:", window.routeDirection);
+
+      if (window.fullChart != null) {
+        document
+          .getElementById(`overview-chart-container-${index}`)
+          .appendChild(window.fullChart.canvas);
+
+        window.fullChart.update();
+      }
     }
 
     function createFullTrailElevationChart() {
@@ -2650,6 +2711,50 @@
           plugins: {
             legend: { display: false },
           },
+          segment: {
+            borderColor: (ctx, i) => {
+              if (
+                window.currentSegment - 1 ===
+                Math.floor(
+                  ctx.p0DataIndex /
+                    (routeData.features[0].geometry.coordinates.length /
+                      window.selectedSegments)
+                )
+              ) {
+                return "rgb(0,255,0)";
+              }
+              return Math.floor(
+                ctx.p0DataIndex /
+                  (routeData.features[0].geometry.coordinates.length /
+                    window.selectedSegments)
+              ) %
+                2 ===
+                0
+                ? "#fb6a4a"
+                : "#a50f15";
+            },
+            backgroundColor: (ctx, i) => {
+              if (
+                window.currentSegment - 1 ===
+                Math.floor(
+                  ctx.p0DataIndex /
+                    (routeData.features[0].geometry.coordinates.length /
+                      window.selectedSegments)
+                )
+              ) {
+                return "rgb(0,255,0)";
+              }
+              return Math.floor(
+                ctx.p0DataIndex /
+                  (routeData.features[0].geometry.coordinates.length /
+                    window.selectedSegments)
+              ) %
+                2 ===
+                0
+                ? "rgba(251, 106, 74, 0.5)"
+                : "rgba(165, 15, 21, 0.5)";
+            },
+          },
           scales: {
             x: {
               display: true,
@@ -2680,12 +2785,13 @@
               window.fullChart.data.datasets[1].data = coordinates.map((_, i) =>
                 i === index ? elevations[i] : null
               );
-              window.fullChart.update("none");
+              window.fullChart.update();
             }
           },
         },
       });
     }
+
     map.on("mousemove", "pct-line", function (e) {
       if (!window.fullChart || !window.fullTrailCoords) return;
 
@@ -2717,7 +2823,7 @@
       window.fullChart.data.datasets[1].data = coords.map((_, i) =>
         i === closestIndex ? elevation : null
       );
-      window.fullChart.update("none");
+      window.fullChart.update();
     });
 
     //colors: ['#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d', '#27000d']
