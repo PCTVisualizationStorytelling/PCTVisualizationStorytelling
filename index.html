@@ -18,7 +18,8 @@
       body {
         margin: 0;
         padding: 0;
-        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        font-family: "National Park", sans-serif;
+        /* font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif; */
         width: 100vw;
         height: 100vh;
         display: grid;
@@ -69,10 +70,12 @@
       }
       #segments-container .step {
         min-height: 100%;
-        display: flex;
+        height: 100%;
+        display: grid;
         flex-direction: column;
         justify-content: center;
         padding: 20px;
+        width: 100%;
       }
 
       #buttons {
@@ -149,7 +152,6 @@
       .step {
         height: 10;
         min-width: 100%;
-        display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -163,6 +165,8 @@
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        height: 100%;
+        display: grid;
       }
       .step.active {
         background: #fafafa;
@@ -226,6 +230,10 @@
         margin-top: 0px;
         margin-bottom: 5px;
         font-size: 12px;
+      }
+      #welcome-section {
+        display: grid;
+        height: 100%;
       }
       #welcome-section h3 {
         margin-top: 0;
@@ -371,6 +379,13 @@
         color: black;
       }
     </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=National+Park:wght@200..800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <!-- Map layout (lefthandside on the screen)-->
@@ -771,6 +786,8 @@
         source: "hillshade-dem",
         type: "hillshade",
       });
+
+      window.routeDirection = 1; // Forside = South to North
       loadRoute();
     });
 
@@ -778,15 +795,58 @@
     async function loadRoute() {
       const response = await fetch("PCT_line_MileMarker_final.geojson");
       routeData = await response.json();
-      map.addSource("pct-route", { type: "geojson", data: routeData });
 
-      map.addLayer({
-        id: "pct-line",
-        type: "line",
-        source: "pct-route",
-        paint: { "line-color": "#ff5733", "line-width": 3 },
-      });
+      // Kopier og evt. vend koordinater hvis nødvendigt
+      const updatedData = JSON.parse(JSON.stringify(routeData));
+      let coords = updatedData.features[0].geometry.coordinates;
 
+      if (window.routeDirection === -1) {
+        coords.reverse(); // Vender kun hvis N → S
+      }
+
+      updatedData.features[0].geometry.coordinates = coords;
+
+      if (map.getSource("pct-route")) {
+        map.getSource("pct-route").setData(updatedData);
+      } else {
+        map.addSource("pct-route", {
+          type: "geojson",
+          data: updatedData,
+          lineMetrics: true, //dynamic color
+        });
+
+        map.addLayer({
+          id: "pct-line",
+          type: "line",
+          source: "pct-route",
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-width": 3,
+            "line-gradient": [
+              "interpolate",
+              ["linear"],
+              ["line-progress"],
+              0.0,
+              "#fc9272",
+              0.16,
+              "#fb6a4a",
+              0.32,
+              "#ef3b2c",
+              0.48,
+              "#cb181d",
+              0.64,
+              "#a50f15",
+              0.8,
+              "#67000d",
+              1.0,
+              "#27000d",
+            ],
+          },
+        });
+      }
       extractMileMarkers();
       createFullTrailElevationChart();
     }
@@ -841,7 +901,28 @@
                 id: "pct-line",
                 type: "line",
                 source: "pct-route",
-                paint: { "line-color": "#ff5733", "line-width": 3 },
+                paint: {
+                  "line-gradient": [
+                    "interpolate",
+                    ["linear"],
+                    ["line-progress"],
+                    0.0,
+                    "#27000d",
+                    0.16,
+                    "#67000d",
+                    0.32,
+                    "#a50f15",
+                    0.48,
+                    "#cb181d",
+                    0.64,
+                    "#ef3b2c",
+                    0.8,
+                    "#fb6a4a",
+                    1.0,
+                    "#fc9272",
+                  ],
+                  "line-width": 3,
+                },
               });
             }
           }
@@ -856,11 +937,7 @@
                 id: "pct-segments-line",
                 type: "line",
                 source: "pct-segments",
-                paint: {
-                  "line-color": "#1f78b4",
-                  "line-width": 4,
-                  "line-dasharray": [4, 2],
-                },
+                paint: { "line-color": "#54473F", "line-width": 4 },
               });
             } else {
               map.getSource("pct-segments").setData(segmentGeoJSON);
@@ -1136,10 +1213,16 @@
     // Function of paces
     function paceToSpeed(pace) {
       const parts = pace.split(":");
-      if (parts.length !== 2) return 0;
-
-      const minutes = parseInt(parts[0], 10);
-      const seconds = parseInt(parts[1], 10);
+      let minutes, seconds;
+      if (parts.length === 2) {
+        minutes = parseInt(parts[0], 10);
+        seconds = parseInt(parts[1], 10);
+      } else if (parts.length === 1) {
+        minutes = parseInt(parts[0], 10);
+        seconds = 0;
+      } else {
+        return 0;
+      }
 
       if (isNaN(minutes) || isNaN(seconds)) return 0;
 
@@ -1244,6 +1327,7 @@
       const segmentSize = Math.floor(totalLength / numSegments);
 
       let segmentFeatures = [];
+      let currentSegment = 1;
       let scrollytellingContent = "";
 
       for (let i = 0; i < numSegments; i++) {
@@ -1253,6 +1337,7 @@
 
         let segmentIndex =
           window.routeDirection === 1 ? i + 1 : numSegments - i;
+        let displayOrder = i + 1;
 
         segmentFeatures.push({
           type: "Feature",
@@ -1261,12 +1346,13 @@
         });
 
         let visibilityClass = i === 0 ? "active" : "";
-        scrollytellingContent += `<div class="step ${visibilityClass}" data-segment="${segmentIndex}"><h2>Segment ${segmentIndex}</h2></div>`;
+        scrollytellingContent += `<div class="step ${visibilityClass}" data-segment="${segmentIndex}" data-order="${displayOrder}"><h2>Segment ${segmentIndex}</h2></div>`;
       }
 
       document.getElementById("segments-container").innerHTML =
         scrollytellingContent;
       segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
+      currentSegment = window.routeDirection === -1 ? window.totalSegments : 1;
 
       if (map.getSource("pct-segments")) {
         map.getSource("pct-segments").setData(segmentGeoJSON);
@@ -1279,11 +1365,7 @@
           id: "pct-segments-line",
           type: "line",
           source: "pct-segments",
-          paint: {
-            "line-color": "#1f78b4",
-            "line-width": 4,
-            "line-dasharray": [4, 2],
-          },
+          paint: { "line-color": "#54473F", "line-width": 4 },
         });
       }
     }
@@ -1420,30 +1502,33 @@
 
         // Where we change the information from the CSV-files onto the scrollytelling
         scrollytellingContent += `
-                    <div class="step" data-segment="${segmentIndex}">
+                     <div class="step" data-segment="${segmentIndex}" data-order="${
+          i + 1
+        }">
                         <h2 style="margin-bottom: 0px">${
                           segmentInfo && segmentInfo.location
                             ? segmentInfo.location
                             : "Segment " + segmentIndex
                         }</h2>
-        
-                        <div class="chart-container" id="chart-container-${segmentIndex}">
-                            <canvas id="elevationChart-${segmentIndex}"></canvas>
-                           
-                        </div>
 
-                        <p style="font-size: 12px; " class="chart-info-line" >
-                            📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(
-                              1
-                            )} km | 
-                            📈<strong>Elevation gain:</strong> ${Math.round(
-                              totalElevationGain
-                            )} m |
-                            📉<strong>Elevation loss:</strong> ${Math.round(
-                              totalElevationLoss
-                            )} m |
-                            ${elevationText}
-                        </p>
+                        <div>
+                          <div class="chart-container" id="chart-container-${segmentIndex}">
+                              <canvas id="elevationChart-${segmentIndex}"></canvas>
+                          </div>
+
+                          <p style="font-size: 12px; " class="chart-info-line" >
+                              📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(
+                                1
+                              )} km |
+                              📈<strong>Elevation gain:</strong> ${Math.round(
+                                totalElevationGain
+                              )} m |
+                              📉<strong>Elevation loss:</strong> ${Math.round(
+                                totalElevationLoss
+                              )} m |
+                              ${elevationText}
+                          </p>
+                        </div>
 
                         <div class="description-image-wrapper">
                             <div class="description-text">
@@ -1469,10 +1554,10 @@
                                         </div>`
                                 : ""
                             }
-                        </div>    
+                        </div>
 
                         <div style="display: flex; justify-content: space-between; gap: 0px; margin-top: 10px;">
-                            
+
                             <!-- Weather box with dropdown inside -->
                             <div class="info-box" style="flex: 1; background: #f9f9f9; padding: 5px; border-radius: 8px;">
                                 <strong>Temperature min/max</strong><br>
@@ -1516,7 +1601,7 @@
                                       : "opacity: 0.3;";
                                     return `<span style="font-size: 22px; ${style}">${icon}</span>`;
                                   })
-                                  .join(" ")} <br> 
+                                  .join(" ")} <br>
                                 <p style="font-size: 12px; margin-bottom: 10px;">${animalSummaryText}</p>
                             </div>
 
@@ -1563,7 +1648,7 @@
                                 <p style="font-size: 12px; margin-bottom: 10px;" ><strong>Shops and campsites:</strong> ${shopCount}</p>
                             </div>
                         </div>
-                        
+
                     </div>`;
       }
       console.log(segmentData);
@@ -1571,19 +1656,29 @@
       document.getElementById("segments-container").innerHTML =
         scrollytellingContent;
       segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
-      currentSegment =
-        window.routeDirection === -1 ? window.selectedSegments : 1;
-      const totalSegments = window.selectedSegments;
+      currentSegment = window.routeDirection === -1 ? window.totalSegments : 1;
 
-      document.getElementById("prevSegment").addEventListener("click", () => {
-        if (currentSegment > 1) {
+      document.getElementById("nextSegment").addEventListener("click", () => {
+        if (
+          window.routeDirection === 1 &&
+          currentSegment < window.totalSegments
+        ) {
+          currentSegment++;
+          scrollToSegment(currentSegment);
+        } else if (window.routeDirection === -1 && currentSegment > 1) {
           currentSegment--;
           scrollToSegment(currentSegment);
         }
       });
 
-      document.getElementById("nextSegment").addEventListener("click", () => {
-        if (currentSegment < totalSegments) {
+      document.getElementById("prevSegment").addEventListener("click", () => {
+        if (window.routeDirection === 1 && currentSegment > 1) {
+          currentSegment--;
+          scrollToSegment(currentSegment);
+        } else if (
+          window.routeDirection === -1 &&
+          currentSegment < window.totalSegments
+        ) {
           currentSegment++;
           scrollToSegment(currentSegment);
         }
@@ -1600,11 +1695,7 @@
           id: "pct-segments-line",
           type: "line",
           source: "pct-segments",
-          paint: {
-            "line-color": "#1f78b4",
-            "line-width": 4,
-            "line-dasharray": [4, 2],
-          },
+          paint: { "line-color": "#54473F", "line-width": 4 },
         });
       } else {
         map.getSource("pct-segments").setData(segmentGeoJSON);
@@ -1694,6 +1785,15 @@
         window[`elevationChart${segmentIndex}`].destroy();
       }
 
+      var gradient = ctx.createLinearGradient(0, 0, 1000, 0);
+      gradient.addColorStop(0, "#fc9272");
+      gradient.addColorStop(0.16, "#fb6a4a");
+      gradient.addColorStop(0.32, "#ef3b2c");
+      gradient.addColorStop(0.48, "#cb181d");
+      gradient.addColorStop(0.64, "#a50f15");
+      gradient.addColorStop(0.8, "#67000d");
+      gradient.addColorStop(1.0, "#27000d");
+
       // Helper to get coords and labels
       const getSegmentData = (indexOffset) => {
         const seg = window.allSegmentFeatures.find(
@@ -1713,12 +1813,25 @@
         return { coords, labels };
       };
 
-      const prev = getSegmentData(-1);
-      const curr = getSegmentData(0);
-      const next = getSegmentData(1);
+      let prev, curr, next;
+
+      if (window.routeDirection === -1) {
+        next = getSegmentData(-1); // sydgående = næste ligger bagud
+        curr = getSegmentData(0);
+        prev = getSegmentData(1); // og forrige ligger foran
+      } else {
+        prev = getSegmentData(-1);
+        curr = getSegmentData(0);
+        next = getSegmentData(1);
+      }
 
       const allCoords = [...prev.coords, ...curr.coords, ...next.coords];
       const allLabels = [...prev.labels, ...curr.labels, ...next.labels];
+      // Vend data hvis nord til syd
+      if (window.routeDirection === -1) {
+        allCoords.reverse();
+        allLabels.reverse();
+      }
 
       if (!window.hikerMarker) {
         const markerElement = document.createElement("div");
@@ -1762,6 +1875,7 @@
                 ...Array(nextData.length).fill(null),
               ],
               borderColor: "#54473F",
+              // borderColor: gradient,
               backgroundColor: "rgba(84, 71, 63, 0.2)",
               tension: 0.3,
               pointRadius: 0,
@@ -2096,7 +2210,10 @@
       if (!routeData) return;
 
       let mileMarkerFeatures = [];
-      let lineCoords = routeData.features[0].geometry.coordinates;
+      let lineCoords = [...routeData.features[0].geometry.coordinates];
+      if (window.routeDirection === -1) {
+        lineCoordinates.reverse();
+      }
       let properties = routeData.features[0].properties.original_properties;
 
       properties.forEach((prop, index) => {
@@ -2263,8 +2380,8 @@
         "match",
         ["get", "segment"],
         segmentIndex,
-        "#ff5733",
-        "#1f78b4",
+        "#54473F",
+        "transparent",
       ]);
     }
 
@@ -2285,7 +2402,7 @@
       map.flyTo({
         center: midPoint,
         zoom: 10,
-        speed: 1.5,
+        speed: 0.8,
         pitch: 70,
       });
       highlightSegment(segmentIndex);
@@ -2386,9 +2503,9 @@
           `weather-chart-container-${segmentIndex}`
         ).innerHTML = `
                     <p style="font-size: 12px">
-                        <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i> 
-                        ${weather.day.min}°C / ${weather.day.max}°C<br> 
-                        <img src="Images/tent.png" alt="Night campsite icon" style="width: 40px; height: auto; font-size: 12px;"> 
+                        <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i>
+                        ${weather.day.min}°C / ${weather.day.max}°C<br>
+                        <img src="Images/tent.png" alt="Night campsite icon" style="width: 40px; height: auto; font-size: 12px;">
                         ${weather.night.min}°C / ${weather.night.max}°C
                     </p>
                 `;
@@ -2434,15 +2551,44 @@
       };
     }
     function scrollToSegment(index) {
-      const segment = document.querySelector(`.step[data-segment='${index}']`);
-      if (segment) {
-        segment.scrollIntoView();
+      const total = window.totalSegments;
 
+      const selectorAttribute =
+        window.routeDirection === -1 ? "data-segment" : "data-order";
+      const allSteps = Array.from(
+        document.querySelectorAll(`.step[${selectorAttribute}]`)
+      );
+      const targetStep = allSteps.find(
+        (el) => parseInt(el.getAttribute(selectorAttribute)) === index
+      );
+
+      if (targetStep) {
+        // Fjern aktiv klassen
+        allSteps.forEach((step) => step.classList.remove("active"));
+        targetStep.classList.add("active");
+
+        // Scroll tydeligt
+        targetStep.scrollIntoView({ behavior: "auto", block: "center" });
+
+        // Vis/Skjul knapper
         document.getElementById("prevSegment").style.display =
           index <= 1 ? "none" : "inline-block";
+
         document.getElementById("nextSegment").style.display =
-          index >= totalSegments ? "none" : "inline-block";
+          index >= total ? "none" : "inline-block";
+
+        currentSegment = index;
+      } else {
+        console.warn(
+          "Segment ikke fundet:",
+          index,
+          "med attribut",
+          selectorAttribute
+        );
       }
+
+      console.log("scrollToSegment index:", index);
+      console.log("window.routeDirection:", window.routeDirection);
     }
 
     function createFullTrailElevationChart() {
@@ -2573,5 +2719,35 @@
       );
       window.fullChart.update("none");
     });
+
+    //colors: ['#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d', '#27000d']
+    function updateGradientRoute() {
+      if (!routeData) return;
+
+      const updatedData = JSON.parse(JSON.stringify(routeData));
+      let coords = updatedData.features[0].geometry.coordinates;
+
+      if (window.routeDirection === -1) {
+        coords.reverse(); // vend ruten for nord-til-syd
+      }
+
+      updatedData.features[0].geometry.coordinates = coords;
+
+      if (map.getSource("pct-route")) {
+        map.getSource("pct-route").setData(updatedData);
+      }
+    }
+    document
+      .querySelectorAll('input[name="routeDirection"]')
+      .forEach((radio) => {
+        radio.addEventListener("change", () => {
+          window.routeDirection = parseInt(
+            document.querySelector('input[name="routeDirection"]:checked')
+              .value,
+            10
+          );
+          updateGradientRoute();
+        });
+      });
   </script>
 </html>
