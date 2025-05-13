@@ -489,10 +489,10 @@
           </div>
 
           <p style="font-size: 12px" class="chart-info-line">
-            📏<strong>Distance</strong> of each segment| 📈<strong
-              >Elevation gain</strong
-            >
-            | 📉<strong>Elevation loss</strong> |
+            📏<strong>Distance</strong> of each segment| 
+            📅 <strong>Estimated days</strong> spent in each segment|
+            📈<strong>Elevation gain</strong>| 
+            📉<strong>Elevation loss</strong> |
             <strong>Short decription</strong> of each segment
           </p>
           <p
@@ -525,8 +525,8 @@
             <div class="box">
               <h4>Temperature</h4>
               <p>
-                Here you will get information about the weather in both day and
-                night time. You can select between all 12 months
+                Here you will get information about the weather based on your starting date and estimated date in segment in both day and
+                night time.
               </p>
               <p>
                 <i
@@ -671,6 +671,11 @@
             />
 
             <br /><br />
+
+            <br>
+            <label for="startDate">Start date:</label>
+            <input type="date" id="startDate" required>
+            <br><br>
 
             <!-- Direction Selection -->
             <!--     <p>Which direction do you plan to hike?</p>
@@ -1116,6 +1121,12 @@
         document.getElementById("restDaysMonth").value,
         10
       );
+      const startDateInput = document.getElementById("startDate");
+      if (!startDateInput || !startDateInput.value) {
+          alert("Please choose a valid start date.");
+          return;
+      }
+      window.startDate = new Date(startDateInput.value);
 
       if (!runPace || !hikePace) {
         alert("Please enter your average paces");
@@ -1153,6 +1164,7 @@
       }
 
       const avgSpeed = runSpeed * runWeight + hikeSpeed * hikeWeight;
+      window.avgSpeed = avgSpeed;
 
       let category, segments;
       if (avgSpeed < 2.5) {
@@ -1390,6 +1402,7 @@
       if (!routeData) return;
 
       const segmentData = await loadCSVData();
+      window.segmentData = segmentData;
 
       const numSegments = window.selectedSegments || 30;
       let lineCoordinates = [...routeData.features[0].geometry.coordinates];
@@ -1424,6 +1437,9 @@
           geometry: { type: "LineString", coordinates: segmentCoords },
           properties: { segment: segmentIndex },
         });
+
+        let segmentDays = segmentInfo.distanceKm / avgSpeed / 10; // 10 timer pr dag
+        let segmentDaysRounded = Math.round(segmentDays * 10) / 10;
 
         let originalPropsSlice = originalProperties.slice(startIdx, endIdx + 1);
         let waterCount = 0;
@@ -1534,6 +1550,7 @@
                               📏<strong>Distance:</strong> ${segmentInfo.distanceKm.toFixed(
                                 1
                               )} km |
+                              📅 <strong>Estimated days:</strong> ${segmentDaysRounded} |
                               📈<strong>Elevation gain:</strong> ${Math.round(
                                 totalElevationGain
                               )} m |
@@ -1576,22 +1593,7 @@
                             <div class="info-box" style="flex: 1; background: #f9f9f9; padding: 5px; border-radius: 8px;">
                                 <strong>Temperature min/max</strong><br>
                                 <div id="weather-chart-container-${segmentIndex}" style="margin-bottom: 8px;"></div>
-                                <label for="weatherMonth-${segmentIndex}" style="font-size: 12px;">Choose month:</label>
-                                <select id="weatherMonth-${segmentIndex}" style="font-size: 12px; margin-bottom: 5px;" onchange="updateWeatherForSegment(${segmentIndex})">
-                                    ${[...Array(12)]
-                                      .map(
-                                        (_, m) =>
-                                          `<option value="${String(
-                                            m + 1
-                                          ).padStart(2, "0")}">${new Date(
-                                            0,
-                                            m
-                                          ).toLocaleString("en", {
-                                            month: "long",
-                                          })}</option>`
-                                      )
-                                      .join("")}
-                                </select><br>
+                                <p style="font-size: 12px;" id="weatherDateLabel-${segmentIndex}"></p>
                             </div>
 
 
@@ -2524,44 +2526,72 @@
 
     // Update weather for the segments function
     async function updateWeatherForSegment(segmentIndex) {
-      if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
-
-      const segment = segmentGeoJSON.features[segmentIndex];
-      if (!segment.geometry || !segment.geometry.coordinates.length) return;
-
-      const midpoint =
-        segment.geometry.coordinates[
-          Math.floor(segment.geometry.coordinates.length / 2)
-        ];
-      const lat = Number(midpoint[1].toFixed(5));
-      const lon = Number(midpoint[0].toFixed(5));
-
-      const monthSelect = document.getElementById(
-        `weatherMonth-${segmentIndex}`
-      );
-      if (!monthSelect) {
-        console.error(`Dropdown weatherMonth-${segmentIndex} not found`);
-        return;
-      }
-      const month = monthSelect.value;
-
-      const weatherData = await fetchHistoricalWeather(lat, lon, month);
-
-      if (weatherData) {
-        const weather = calculateDayNightMinMax(weatherData);
-
-        document.getElementById(
-          `weather-chart-container-${segmentIndex}`
-        ).innerHTML = `
+            if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
+        
+            const segment = segmentGeoJSON.features[segmentIndex];
+            if (!segment.geometry || !segment.geometry.coordinates.length) return;
+        
+            const midpoint = segment.geometry.coordinates[Math.floor(segment.geometry.coordinates.length / 2)];
+            const lat = Number(midpoint[1].toFixed(5));
+            const lon = Number(midpoint[0].toFixed(5));
+        
+            // Sikring: Sørg for at startdato og hastighed findes
+            if (!window.startDate || isNaN(window.startDate.getTime())) {
+                console.warn("Ingen gyldig startdato – vejrdata springes over.");
+                return;
+            }
+        
+            const avgSpeed = window.avgSpeed || 4; // fallback km/t hvis den ikke er sat
+            let kmBefore = 0;
+            for (let i = 0; i < segmentIndex - 1; i++) {
+                if (window.segmentData && window.segmentData[i]) {
+                    kmBefore += window.segmentData[i].distanceKm || 0;
+                }
+            }
+        
+            const hikingHours = kmBefore / avgSpeed;
+            const hikingDays = hikingHours / 10;
+            const segmentDate = new Date(window.startDate);
+            segmentDate.setDate(segmentDate.getDate() + Math.round(hikingDays));
+        
+            // Ekstra sikkerhed
+            if (isNaN(segmentDate.getTime())) {
+                console.warn("Segmentdato kunne ikke beregnes.");
+                return;
+            }
+        
+            const month = String(segmentDate.getMonth() + 1).padStart(2, "0");
+        
+            // Debugging logs – valgfrit
+            console.log(`Segment ${segmentIndex}:`, {
+                kmBefore,
+                avgSpeed,
+                hikingDays,
+                segmentDate: segmentDate.toISOString().split("T")[0],
+                month
+            });
+        
+            const weatherData = await fetchHistoricalWeather(lat, lon, month);
+        
+            if (weatherData) {
+                const weather = calculateDayNightMinMax(weatherData);
+        
+                document.getElementById(`weather-chart-container-${segmentIndex}`).innerHTML = `
                     <p style="font-size: 12px">
-                        <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i>
-                        ${weather.day.min}°C / ${weather.day.max}°C<br>
-                        <img src="Images/tent.png" alt="Night campsite icon" style="width: 40px; height: auto; font-size: 12px;">
+                        <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i> 
+                        ${weather.day.min}°C / ${weather.day.max}°C<br> 
+                        <img src="Images/tent.png" alt="Night campsite icon" style="width: 40px; height: auto; font-size: 12px;"> 
                         ${weather.night.min}°C / ${weather.night.max}°C
                     </p>
                 `;
-      }
-    }
+        
+                // Opdater datoen nedenunder
+                const dateLabel = document.getElementById(`weatherDateLabel-${segmentIndex}`);
+                if (dateLabel) {
+                    dateLabel.textContent = `Weather based on approx. ${segmentDate.toDateString()}`;
+                }
+            }
+        }
     function calculateDayNightMinMax(weatherData) {
       if (
         !weatherData ||
