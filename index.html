@@ -198,7 +198,7 @@
       .styled-slider {
         width: 100%;
         -webkit-appearance: none;
-        background: linear-gradient(to right, #3b1111, #8b3f35, #854b1548);
+        background: linear-gradient(to right, #614737, #9a7259);
         height: 8px;
         border-radius: 4px;
         outline: none;
@@ -320,7 +320,6 @@
         border-radius: 12px;
         padding: 5px 5px;
         width: 130px;
-        height: 120px;
         text-align: center;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
         font-size: 14px;
@@ -844,20 +843,8 @@
               "interpolate",
               ["linear"],
               ["line-progress"],
-              0.0,
-              "#fc9272",
-              0.16,
-              "#fb6a4a",
-              0.32,
-              "#ef3b2c",
-              0.48,
-              "#cb181d",
-              0.64,
-              "#a50f15",
-              0.8,
-              "#67000d",
-              1.0,
-              "#27000d",
+              0.0, "#614737",
+              1.0, "#9a7259"
             ],
           },
         });
@@ -921,20 +908,8 @@
                     "interpolate",
                     ["linear"],
                     ["line-progress"],
-                    0.0,
-                    "#27000d",
-                    0.16,
-                    "#67000d",
-                    0.32,
-                    "#a50f15",
-                    0.48,
-                    "#cb181d",
-                    0.64,
-                    "#ef3b2c",
-                    0.8,
-                    "#fb6a4a",
-                    1.0,
-                    "#fc9272",
+                    0.0, "#614737",
+                    1.0, "#9a7259"
                   ],
                   "line-width": 3,
                 },
@@ -1112,7 +1087,13 @@
       selectCategory(parseInt(value));
       calculateCategory();
     }
+    window.addEventListener('DOMContentLoaded', () => {
+    const startDate = document.getElementById('startDate');
+    if (startDate) {
 
+      startDate.value = new Date().toISOString().split('T')[0];
+    }
+     });
     // The calculator function
     function calculateCategory() {
       const runPace = document.getElementById("runPace").value;
@@ -1121,12 +1102,10 @@
         document.getElementById("restDaysMonth").value,
         10
       );
-      const startDateInput = document.getElementById("startDate");
-      if (!startDateInput || !startDateInput.value) {
-          alert("Please choose a valid start date.");
-          return;
-      }
-      window.startDate = new Date(startDateInput.value);
+        const startDateInput = document.getElementById("startDate");
+        const dateValue = startDateInput.value || new Date().toISOString().split('T')[0];
+        window.startDate = new Date(dateValue);
+
 
       if (!runPace || !hikePace) {
         alert("Please enter your average paces");
@@ -1196,17 +1175,23 @@
       const hikingDays = totalHikingHours / activeHoursPerDay;
       const totalRestDays = (hikingDays / 30) * restDaysMonth;
       const totalDays = hikingDays + totalRestDays;
-      const formattedTime = formatTime(totalDays);
-
-      document.getElementById(
-        "estimatedTimeDisplay"
-      ).innerText = `Estimated time to complete the trail: ${formattedTime}`;
-
-      window.selectedSegments = segments;
-      if (window.fullChart != null) {
-        window.fullChart.update();
-      }
-    }
+ 
+         // Format time (months, weeks, days)
+        const formattedTime = formatTime(totalDays);
+ 
+            // calculate date and estimated time
+            const endDate = new Date(window.startDate.getTime());
+            endDate.setDate(endDate.getDate() + Math.round(totalDays));
+            const formattedEndDate = endDate.toLocaleDateString('da-DK', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+ 
+        // show result
+            document.getElementById("estimatedTimeDisplay").innerHTML = `<strong>Estimated duration:</strong><span style="font-weight: normal;"> ${formattedTime}</span><br><strong>Estimated end date:</strong><span style="font-weight: normal;"> ${formattedEndDate}</span>`;
+            window.selectedSegments = segments;
+        }
 
     // New function to begin the trail
     function calculateAndStartTrail() {
@@ -1828,13 +1813,8 @@
       }
 
       var gradient = ctx.createLinearGradient(0, 0, 400, 0);
-      gradient.addColorStop(0, "#fc9272");
-      gradient.addColorStop(0.16, "#fb6a4a");
-      gradient.addColorStop(0.32, "#ef3b2c");
-      gradient.addColorStop(0.48, "#cb181d");
-      gradient.addColorStop(0.64, "#a50f15");
-      gradient.addColorStop(0.8, "#67000d");
-      gradient.addColorStop(1.0, "#27000d");
+      gradient.addColorStop(0, "#614737"),
+      gradient.addColorStop(1,"#9a7259")
 
       // Helper to get coords and labels
       const getSegmentData = (indexOffset) => {
@@ -2760,8 +2740,8 @@
               ) %
                 2 ===
                 0
-                ? "#fb6a4a"
-                : "#a50f15";
+                ? "#614737"
+                : "#9a7259"
             },
             backgroundColor: (ctx, i) => {
               if (
@@ -2781,8 +2761,8 @@
               ) %
                 2 ===
                 0
-                ? "rgba(251, 106, 74, 0.5)"
-                : "rgba(165, 15, 21, 0.5)";
+                ? "#614737"
+                : "#9a7259"
             },
           },
           scales: {
@@ -2885,5 +2865,6 @@
           updateGradientRoute();
         });
       });
+ 
   </script>
 </html>
