@@ -850,7 +850,7 @@
         });
       }
       extractMileMarkers();
-      createElevationChart();
+      createFullTrailElevationChart();
     }
 
     // Function to change the style of the map
@@ -1205,7 +1205,7 @@
 
     // Function of the calculation
     function showCalculation() {
-      const chart = document.getElementById("ElevationChart");
+      const chart = document.getElementById("fullTrailElevationChart");
       const welcomeSection = document.getElementById("welcome-section");
       welcomeSection.style.opacity = 1;
       welcomeSection.style.transition = "opacity 0.5s ease";
@@ -2662,7 +2662,7 @@
       }
     }
 
-    function createElevationChart() {
+    function createFullTrailElevationChart() {
       if (!routeData || !routeData.features.length) return;
 
       const coordinates = routeData.features[0].geometry.coordinates;
