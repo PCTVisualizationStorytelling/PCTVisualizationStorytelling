@@ -325,7 +325,7 @@
         background-color: #f9f7f6;
         border-radius: 12px;
         padding: 5px 5px;
-        width: 130px;
+        /* width: 130px; */
         text-align: center;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
         font-size: 14px;
@@ -515,17 +515,19 @@
             will get information about the area you will be hiking in. At the
             right handside a photo of an attraction or pointed area will be
             shown - it's clickable. The map on the lefthand-side on the screen
-            is adjustable, so you can make serval filtrations if you preffer.
-            The elevation chart is interactive with the map - try it out!
+            is adjustable, so you can make serval filtrations if you prefer. The
+            elevation chart is interactive with the map - try it out!
           </p>
           <div
             class="segment-details-container"
             style="
-              display: flex;
+              display: grid;
+              grid-template-columns: auto auto auto auto;
+              grid-template-rows: auto;
               justify-content: space-around;
               margin-top: 5px;
               flex-wrap: wrap;
-              gap: 5px;
+              gap: 15px;
             "
           >
             <!-- Weather Box -->
