@@ -230,6 +230,12 @@
         height: 80px;
         position: relative;
       }
+      .chart-container-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
       p.chart-info-line {
         margin-top: 0px;
         margin-bottom: 5px;
@@ -483,15 +489,17 @@
       <div id="intro-step" class="step active">
         <div id="welcome-section">
           <h2>Welcome to the Pacific Crest Trail Planner</h2>
-          <div class="chart-container" style="height: 180px">
-            <canvas id="fullTrailElevationChart"></canvas>
+          <div class="chart-container-wrapper">
+            <div class="chart-container" style="height: 180px">
+              <canvas id="fullTrailElevationChart"></canvas>
+            </div>
           </div>
 
           <p style="font-size: 12px" class="chart-info-line">
-            📏<strong>Distance</strong> of each segment| 
-            📅 <strong>Estimated days</strong> spent in each segment|
-            📈<strong>Elevation gain</strong>| 
-            📉<strong>Elevation loss</strong> |
+            📏<strong>Distance</strong> of each segment| 📅
+            <strong>Estimated days</strong> spent in each segment| 📈<strong
+              >Elevation gain</strong
+            >| 📉<strong>Elevation loss</strong> |
             <strong>Short decription</strong> of each segment
           </p>
           <p
@@ -524,7 +532,8 @@
             <div class="box">
               <h4>Temperature</h4>
               <p>
-                Here you will get information about the weather based on your starting date and estimated date in segment in both day and
+                Here you will get information about the weather based on your
+                starting date and estimated date in segment in both day and
                 night time.
               </p>
               <p>
@@ -671,10 +680,10 @@
 
             <br /><br />
 
-            <br>
+            <br />
             <label for="startDate">Start date:</label>
-            <input type="date" id="startDate" required>
-            <br><br>
+            <input type="date" id="startDate" required />
+            <br /><br />
 
             <!-- Direction Selection -->
             <!--     <p>Which direction do you plan to hike?</p>
@@ -843,8 +852,10 @@
               "interpolate",
               ["linear"],
               ["line-progress"],
-              0.0, "#614737",
-              1.0, "#9a7259"
+              0.0,
+              "#614737",
+              1.0,
+              "#9a7259",
             ],
           },
         });
@@ -908,8 +919,10 @@
                     "interpolate",
                     ["linear"],
                     ["line-progress"],
-                    0.0, "#614737",
-                    1.0, "#9a7259"
+                    0.0,
+                    "#614737",
+                    1.0,
+                    "#9a7259",
                   ],
                   "line-width": 3,
                 },
@@ -1087,13 +1100,12 @@
       selectCategory(parseInt(value));
       calculateCategory();
     }
-    window.addEventListener('DOMContentLoaded', () => {
-    const startDate = document.getElementById('startDate');
-    if (startDate) {
-
-      startDate.value = new Date().toISOString().split('T')[0];
-    }
-     });
+    window.addEventListener("DOMContentLoaded", () => {
+      const startDate = document.getElementById("startDate");
+      if (startDate) {
+        startDate.value = new Date().toISOString().split("T")[0];
+      }
+    });
     // The calculator function
     function calculateCategory() {
       const runPace = document.getElementById("runPace").value;
@@ -1102,10 +1114,10 @@
         document.getElementById("restDaysMonth").value,
         10
       );
-        const startDateInput = document.getElementById("startDate");
-        const dateValue = startDateInput.value || new Date().toISOString().split('T')[0];
-        window.startDate = new Date(dateValue);
-
+      const startDateInput = document.getElementById("startDate");
+      const dateValue =
+        startDateInput.value || new Date().toISOString().split("T")[0];
+      window.startDate = new Date(dateValue);
 
       if (!runPace || !hikePace) {
         alert("Please enter your average paces");
@@ -1175,23 +1187,25 @@
       const hikingDays = totalHikingHours / activeHoursPerDay;
       const totalRestDays = (hikingDays / 30) * restDaysMonth;
       const totalDays = hikingDays + totalRestDays;
- 
-         // Format time (months, weeks, days)
-        const formattedTime = formatTime(totalDays);
- 
-            // calculate date and estimated time
-            const endDate = new Date(window.startDate.getTime());
-            endDate.setDate(endDate.getDate() + Math.round(totalDays));
-            const formattedEndDate = endDate.toLocaleDateString('da-DK', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
- 
-        // show result
-            document.getElementById("estimatedTimeDisplay").innerHTML = `<strong>Estimated duration:</strong><span style="font-weight: normal;"> ${formattedTime}</span><br><strong>Estimated end date:</strong><span style="font-weight: normal;"> ${formattedEndDate}</span>`;
-            window.selectedSegments = segments;
-        }
+
+      // Format time (months, weeks, days)
+      const formattedTime = formatTime(totalDays);
+
+      // calculate date and estimated time
+      const endDate = new Date(window.startDate.getTime());
+      endDate.setDate(endDate.getDate() + Math.round(totalDays));
+      const formattedEndDate = endDate.toLocaleDateString("da-DK", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      // show result
+      document.getElementById(
+        "estimatedTimeDisplay"
+      ).innerHTML = `<strong>Estimated duration:</strong><span style="font-weight: normal;"> ${formattedTime}</span><br><strong>Estimated end date:</strong><span style="font-weight: normal;"> ${formattedEndDate}</span>`;
+      window.selectedSegments = segments;
+    }
 
     // New function to begin the trail
     function calculateAndStartTrail() {
@@ -1523,7 +1537,7 @@
                             : "Segment " + segmentIndex
                         }</h2>
 
-                        <div>
+                        <div class="chart-container-wrapper">
                           <div class="chart-container" id="chart-container-${segmentIndex}">
                               <canvas id="elevationChart-${segmentIndex}"></canvas>
                           </div>
@@ -1813,8 +1827,7 @@
       }
 
       var gradient = ctx.createLinearGradient(0, 0, 400, 0);
-      gradient.addColorStop(0, "#614737"),
-      gradient.addColorStop(1,"#9a7259")
+      gradient.addColorStop(0, "#614737"), gradient.addColorStop(1, "#9a7259");
 
       // Helper to get coords and labels
       const getSegmentData = (indexOffset) => {
@@ -2506,57 +2519,62 @@
 
     // Update weather for the segments function
     async function updateWeatherForSegment(segmentIndex) {
-            if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
-        
-            const segment = segmentGeoJSON.features[segmentIndex];
-            if (!segment.geometry || !segment.geometry.coordinates.length) return;
-        
-            const midpoint = segment.geometry.coordinates[Math.floor(segment.geometry.coordinates.length / 2)];
-            const lat = Number(midpoint[1].toFixed(5));
-            const lon = Number(midpoint[0].toFixed(5));
-        
-            // Sikring: Sørg for at startdato og hastighed findes
-            if (!window.startDate || isNaN(window.startDate.getTime())) {
-                console.warn("Ingen gyldig startdato – vejrdata springes over.");
-                return;
-            }
-        
-            const avgSpeed = window.avgSpeed || 4; // fallback km/t hvis den ikke er sat
-            let kmBefore = 0;
-            for (let i = 0; i < segmentIndex - 1; i++) {
-                if (window.segmentData && window.segmentData[i]) {
-                    kmBefore += window.segmentData[i].distanceKm || 0;
-                }
-            }
-        
-            const hikingHours = kmBefore / avgSpeed;
-            const hikingDays = hikingHours / 10;
-            const segmentDate = new Date(window.startDate);
-            segmentDate.setDate(segmentDate.getDate() + Math.round(hikingDays));
-        
-            // Ekstra sikkerhed
-            if (isNaN(segmentDate.getTime())) {
-                console.warn("Segmentdato kunne ikke beregnes.");
-                return;
-            }
-        
-            const month = String(segmentDate.getMonth() + 1).padStart(2, "0");
-        
-            // Debugging logs – valgfrit
-            console.log(`Segment ${segmentIndex}:`, {
-                kmBefore,
-                avgSpeed,
-                hikingDays,
-                segmentDate: segmentDate.toISOString().split("T")[0],
-                month
-            });
-        
-            const weatherData = await fetchHistoricalWeather(lat, lon, month);
-        
-            if (weatherData) {
-                const weather = calculateDayNightMinMax(weatherData);
-        
-                document.getElementById(`weather-chart-container-${segmentIndex}`).innerHTML = `
+      if (!segmentGeoJSON || !segmentGeoJSON.features[segmentIndex]) return;
+
+      const segment = segmentGeoJSON.features[segmentIndex];
+      if (!segment.geometry || !segment.geometry.coordinates.length) return;
+
+      const midpoint =
+        segment.geometry.coordinates[
+          Math.floor(segment.geometry.coordinates.length / 2)
+        ];
+      const lat = Number(midpoint[1].toFixed(5));
+      const lon = Number(midpoint[0].toFixed(5));
+
+      // Sikring: Sørg for at startdato og hastighed findes
+      if (!window.startDate || isNaN(window.startDate.getTime())) {
+        console.warn("Ingen gyldig startdato – vejrdata springes over.");
+        return;
+      }
+
+      const avgSpeed = window.avgSpeed || 4; // fallback km/t hvis den ikke er sat
+      let kmBefore = 0;
+      for (let i = 0; i < segmentIndex - 1; i++) {
+        if (window.segmentData && window.segmentData[i]) {
+          kmBefore += window.segmentData[i].distanceKm || 0;
+        }
+      }
+
+      const hikingHours = kmBefore / avgSpeed;
+      const hikingDays = hikingHours / 10;
+      const segmentDate = new Date(window.startDate);
+      segmentDate.setDate(segmentDate.getDate() + Math.round(hikingDays));
+
+      // Ekstra sikkerhed
+      if (isNaN(segmentDate.getTime())) {
+        console.warn("Segmentdato kunne ikke beregnes.");
+        return;
+      }
+
+      const month = String(segmentDate.getMonth() + 1).padStart(2, "0");
+
+      // Debugging logs – valgfrit
+      console.log(`Segment ${segmentIndex}:`, {
+        kmBefore,
+        avgSpeed,
+        hikingDays,
+        segmentDate: segmentDate.toISOString().split("T")[0],
+        month,
+      });
+
+      const weatherData = await fetchHistoricalWeather(lat, lon, month);
+
+      if (weatherData) {
+        const weather = calculateDayNightMinMax(weatherData);
+
+        document.getElementById(
+          `weather-chart-container-${segmentIndex}`
+        ).innerHTML = `
                     <p style="font-size: 12px">
                         <i class="fa-solid fa-person-hiking" style="color:#444; width: 40px; height: auto;"></i> 
                         ${weather.day.min}°C / ${weather.day.max}°C<br> 
@@ -2564,14 +2582,16 @@
                         ${weather.night.min}°C / ${weather.night.max}°C
                     </p>
                 `;
-        
-                // Opdater datoen nedenunder
-                const dateLabel = document.getElementById(`weatherDateLabel-${segmentIndex}`);
-                if (dateLabel) {
-                    dateLabel.textContent = `Weather based on approx. ${segmentDate.toDateString()}`;
-                }
-            }
+
+        // Opdater datoen nedenunder
+        const dateLabel = document.getElementById(
+          `weatherDateLabel-${segmentIndex}`
+        );
+        if (dateLabel) {
+          dateLabel.textContent = `Weather based on approx. ${segmentDate.toDateString()}`;
         }
+      }
+    }
     function calculateDayNightMinMax(weatherData) {
       if (
         !weatherData ||
@@ -2741,7 +2761,7 @@
                 2 ===
                 0
                 ? "#614737"
-                : "#9a7259"
+                : "#9a7259";
             },
             backgroundColor: (ctx, i) => {
               if (
@@ -2762,7 +2782,7 @@
                 2 ===
                 0
                 ? "#614737"
-                : "#9a7259"
+                : "#9a7259";
             },
           },
           scales: {
@@ -2865,6 +2885,5 @@
           updateGradientRoute();
         });
       });
- 
   </script>
 </html>
