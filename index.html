@@ -196,7 +196,7 @@
         flex: 1;
       }
       .styled-slider {
-        width: 100%;
+        width: 88%;
         -webkit-appearance: none;
         background: linear-gradient(to right, #614737, #9a7259);
         height: 8px;
@@ -1183,6 +1183,8 @@
         segments = 20;
       }
 
+      document.getElementById("realSlider").value = parseInt(category);
+
       const totalDistance = 4280;
       const activeHoursPerDay = 10;
       const totalHikingHours = totalDistance / avgSpeed;
@@ -1207,6 +1209,10 @@
         "estimatedTimeDisplay"
       ).innerHTML = `<strong>Estimated duration:</strong><span style="font-weight: normal;"> ${formattedTime}</span><br><strong>Estimated end date:</strong><span style="font-weight: normal;"> ${formattedEndDate}</span>`;
       window.selectedSegments = segments;
+
+      if (window.fullChart != null) {
+        window.fullChart.update();
+      }
     }
 
     // New function to begin the trail
@@ -1533,11 +1539,15 @@
                      <div class="step" data-segment="${segmentIndex}" data-order="${
           i + 1
         }">
-                        <h2 style="margin-bottom: 0px">${
-                          segmentInfo && segmentInfo.location
-                            ? segmentInfo.location
-                            : "Segment " + segmentIndex
-                        }</h2>
+                        <div>
+                          <h2 style="margin-bottom: 0px">${
+                            segmentInfo && segmentInfo.location
+                              ? segmentInfo.location
+                              : "Segment " + segmentIndex
+                          }</h2>
+
+                          <div>${segmentIndex}/${window.selectedSegments}</div>
+                        </div>
 
                         <div class="chart-container-wrapper">
                           <div class="chart-container" id="chart-container-${segmentIndex}">
@@ -1668,8 +1678,6 @@
 
                     </div>`;
       }
-      console.log(segmentData);
-
       document.getElementById("segments-container").innerHTML =
         scrollytellingContent;
       segmentGeoJSON = { type: "FeatureCollection", features: segmentFeatures };
@@ -1688,10 +1696,12 @@
           ticks: {
             // Include a dollar sign in the ticks
             callback: function (value, index, ticks) {
-              return Math.floor(
-                value /
-                  (routeData.features[0].geometry.coordinates.length /
-                    window.selectedSegments)
+              return (
+                Math.floor(
+                  value /
+                    (routeData.features[0].geometry.coordinates.length /
+                      window.selectedSegments)
+                ) + 1
               );
             },
           },
@@ -2691,7 +2701,9 @@
       const props = routeData.features[0].properties.original_properties;
 
       const elevations = coordinates.map((coord) => coord[2] || 0);
-      const labels = props.map((p) => p.Name || "");
+      const labels = props.map((p) => {
+        return p.Name || "";
+      });
 
       const ctx = document
         .getElementById("fullTrailElevationChart")
