@@ -26,7 +26,15 @@
         width: 100vw;
         height: 100vh;
         display: grid;
-        grid-template-columns: 50% 50%;
+        grid-template-rows: 50% 50%;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+      }
+
+      @media (min-width: 1024px) {
+        body {
+          grid-template-columns: 50% 50%;
+          grid-template-rows: repeat(1, minmax(0, 1fr));
+        }
       }
 
       #map-container {
